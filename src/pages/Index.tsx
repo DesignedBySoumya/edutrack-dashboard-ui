@@ -7,11 +7,35 @@ import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
 
+interface Topic {
+  id: number;
+  name: string;
+  isCompleted: boolean;
+  timeSpent?: string;
+}
+
+interface Chapter {
+  id: number;
+  name: string;
+  progress: number;
+  topics: Topic[];
+}
+
+interface Subject {
+  id: number;
+  name: string;
+  progress: number;
+  timeSpent: string;
+  color: string;
+  isPlaying: boolean;
+  chapters?: Chapter[];
+}
+
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState('2');
   const [activeTab, setActiveTab] = useState('all');
 
-  const subjects = [
+  const [subjects, setSubjects] = useState<Subject[]>([
     {
       id: 1,
       name: "Indian Polity and Governance",
@@ -91,14 +115,43 @@ const Index = () => {
         }
       ]
     }
-  ];
+  ]);
 
-  const handlePlayPause = (id: number) => {
-    console.log(`Play/Pause subject ${id}`);
+  const handlePlayPause = (subjectId: number) => {
+    setSubjects(prevSubjects => 
+      prevSubjects.map(subject => 
+        subject.id === subjectId 
+          ? { ...subject, isPlaying: !subject.isPlaying }
+          : { ...subject, isPlaying: false } // Stop other subjects when one starts
+      )
+    );
+    
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+      console.log(`${subject.isPlaying ? 'Paused' : 'Started'} timer for ${subject.name}`);
+    }
   };
 
   const handleAddTopic = (subjectId: number, chapterId: number) => {
     console.log(`Add new topic to subject ${subjectId}, chapter ${chapterId}`);
+  };
+
+  const handleToggleTopic = (subjectId: number, chapterId: number, topicId: number) => {
+    const subject = subjects.find(s => s.id === subjectId);
+    const chapter = subject?.chapters?.find(c => c.id === chapterId);
+    const topic = chapter?.topics.find(t => t.id === topicId);
+    
+    if (topic) {
+      console.log(`${topic.isCompleted ? 'Unchecked' : 'Completed'} topic: ${topic.name}`);
+    }
+  };
+
+  const handleUpdateSubject = (updatedSubject: Subject) => {
+    setSubjects(prevSubjects => 
+      prevSubjects.map(subject => 
+        subject.id === updatedSubject.id ? updatedSubject : subject
+      )
+    );
   };
 
   return (
@@ -121,8 +174,10 @@ const Index = () => {
           <SubjectCard
             key={subject.id}
             subject={subject}
-            onPlayPause={() => handlePlayPause(subject.id)}
+            onPlayPause={handlePlayPause}
             onAddTopic={handleAddTopic}
+            onToggleTopic={handleToggleTopic}
+            onUpdateSubject={handleUpdateSubject}
           />
         ))}
       </div>

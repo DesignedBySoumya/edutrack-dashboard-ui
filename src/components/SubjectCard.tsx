@@ -29,12 +29,21 @@ interface Subject {
 
 interface SubjectCardProps {
   subject: Subject;
-  onPlayPause: () => void;
+  onPlayPause: (subjectId: number) => void;
   onAddTopic?: (subjectId: number, chapterId: number) => void;
+  onToggleTopic?: (subjectId: number, chapterId: number, topicId: number) => void;
+  onUpdateSubject?: (updatedSubject: Subject) => void;
 }
 
-export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardProps) => {
+export const SubjectCard = ({ 
+  subject, 
+  onPlayPause, 
+  onAddTopic, 
+  onToggleTopic,
+  onUpdateSubject 
+}: SubjectCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [localSubject, setLocalSubject] = useState(subject);
 
   const getColorClasses = (color: string) => {
     const colorMap = {
@@ -74,15 +83,79 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
 
   const circumference = 2 * Math.PI * 20;
   const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (subject.progress / 100) * circumference;
+  const strokeDashoffset = circumference - (localSubject.progress / 100) * circumference;
 
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
 
+  const handlePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updatedSubject = { ...localSubject, isPlaying: !localSubject.isPlaying };
+    setLocalSubject(updatedSubject);
+    onPlayPause(localSubject.id);
+    if (onUpdateSubject) {
+      onUpdateSubject(updatedSubject);
+    }
+  };
+
   const handleAddTopic = (chapterId: number) => {
-    if (onAddTopic) {
-      onAddTopic(subject.id, chapterId);
+    const topicName = prompt('Enter new topic name:');
+    if (topicName && topicName.trim()) {
+      const updatedSubject = { ...localSubject };
+      const chapterIndex = updatedSubject.chapters?.findIndex(ch => ch.id === chapterId);
+      
+      if (chapterIndex !== undefined && chapterIndex >= 0 && updatedSubject.chapters) {
+        const newTopic: Topic = {
+          id: Date.now(),
+          name: topicName.trim(),
+          isCompleted: false
+        };
+        
+        updatedSubject.chapters[chapterIndex].topics.push(newTopic);
+        setLocalSubject(updatedSubject);
+        
+        if (onAddTopic) {
+          onAddTopic(localSubject.id, chapterId);
+        }
+        if (onUpdateSubject) {
+          onUpdateSubject(updatedSubject);
+        }
+      }
+    }
+  };
+
+  const handleToggleTopic = (chapterId: number, topicId: number) => {
+    const updatedSubject = { ...localSubject };
+    const chapterIndex = updatedSubject.chapters?.findIndex(ch => ch.id === chapterId);
+    
+    if (chapterIndex !== undefined && chapterIndex >= 0 && updatedSubject.chapters) {
+      const topicIndex = updatedSubject.chapters[chapterIndex].topics.findIndex(t => t.id === topicId);
+      
+      if (topicIndex >= 0) {
+        updatedSubject.chapters[chapterIndex].topics[topicIndex].isCompleted = 
+          !updatedSubject.chapters[chapterIndex].topics[topicIndex].isCompleted;
+        
+        // Update chapter progress
+        const chapter = updatedSubject.chapters[chapterIndex];
+        const completedTopics = chapter.topics.filter(t => t.isCompleted).length;
+        chapter.progress = Math.round((completedTopics / chapter.topics.length) * 100);
+        
+        // Update overall subject progress
+        const totalTopics = updatedSubject.chapters.reduce((sum, ch) => sum + ch.topics.length, 0);
+        const totalCompleted = updatedSubject.chapters.reduce((sum, ch) => 
+          sum + ch.topics.filter(t => t.isCompleted).length, 0);
+        updatedSubject.progress = Math.round((totalCompleted / totalTopics) * 100);
+        
+        setLocalSubject(updatedSubject);
+        
+        if (onToggleTopic) {
+          onToggleTopic(localSubject.id, chapterId, topicId);
+        }
+        if (onUpdateSubject) {
+          onUpdateSubject(updatedSubject);
+        }
+      }
     }
   };
 
@@ -110,7 +183,7 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
                     r="20"
                     strokeWidth="4"
                     fill="none"
-                    className={getColorClasses(subject.color)}
+                    className={getColorClasses(localSubject.color)}
                     strokeDasharray={strokeDasharray}
                     strokeDashoffset={strokeDashoffset}
                     strokeLinecap="round"
@@ -118,15 +191,15 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-sm font-bold text-white">
-                    {subject.progress}%
+                    {localSubject.progress}%
                   </span>
                 </div>
               </div>
 
               {/* Subject Info */}
               <div className="flex-1">
-                <h3 className="text-base font-medium text-white mb-1">{subject.name}</h3>
-                <p className="text-sm text-gray-400 mb-2">{subject.timeSpent}</p>
+                <h3 className="text-base font-medium text-white mb-1">{localSubject.name}</h3>
+                <p className="text-sm text-gray-400 mb-2">{localSubject.timeSpent}</p>
                 <div className="flex items-center text-xs text-gray-500 hover:text-gray-300 transition-colors">
                   <span>See Details</span>
                   {isExpanded ? (
@@ -139,15 +212,12 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
 
               {/* Play/Pause Button */}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayPause();
-                }}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${getPlayButtonColor(
-                  subject.color
+                onClick={handlePlayPause}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all transform hover:scale-105 ${getPlayButtonColor(
+                  localSubject.color
                 )}`}
               >
-                {subject.isPlaying ? (
+                {localSubject.isPlaying ? (
                   <Pause className="w-5 h-5 text-black" />
                 ) : (
                   <Play className="w-5 h-5 text-black ml-0.5" />
@@ -159,7 +229,7 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
 
         <CollapsibleContent className="animate-accordion-down">
           <div className="border-t border-gray-700">
-            {subject.chapters?.map((chapter) => (
+            {localSubject.chapters?.map((chapter) => (
               <div key={chapter.id} className="p-4 border-b border-gray-700 last:border-b-0">
                 {/* Chapter Header */}
                 <div className="flex items-center justify-between mb-3">
@@ -170,7 +240,7 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
                 {/* Chapter Progress Bar */}
                 <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
                   <div
-                    className={`h-2 rounded-full ${getProgressBarColor(subject.color)}`}
+                    className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(localSubject.color)}`}
                     style={{ width: `${chapter.progress}%` }}
                   ></div>
                 </div>
@@ -180,14 +250,17 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
                   {chapter.topics.map((topic) => (
                     <div key={topic.id} className="flex items-center justify-between py-1">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                          topic.isCompleted 
-                            ? `${getProgressBarColor(subject.color)} border-transparent` 
-                            : 'border-gray-500 bg-transparent'
-                        }`}>
+                        <button
+                          onClick={() => handleToggleTopic(chapter.id, topic.id)}
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                            topic.isCompleted 
+                              ? `${getProgressBarColor(localSubject.color)} border-transparent` 
+                              : 'border-gray-500 bg-transparent hover:border-gray-400'
+                          }`}
+                        >
                           {topic.isCompleted && <Check className="w-3 h-3 text-black" />}
-                        </div>
-                        <span className={`text-sm ${
+                        </button>
+                        <span className={`text-sm transition-all ${
                           topic.isCompleted ? 'text-gray-400 line-through' : 'text-gray-300'
                         }`}>
                           {topic.name}
@@ -202,7 +275,7 @@ export const SubjectCard = ({ subject, onPlayPause, onAddTopic }: SubjectCardPro
                   {/* Add New Topic Button */}
                   <button
                     onClick={() => handleAddTopic(chapter.id)}
-                    className="flex items-center space-x-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mt-2"
+                    className="flex items-center space-x-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mt-2 hover:bg-gray-700 px-2 py-1 rounded"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add New Topic</span>
