@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { DateTimeline } from '@/components/DateTimeline';
@@ -155,7 +154,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pb-20">
+    <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter">
       {/* Header */}
       <Header />
       

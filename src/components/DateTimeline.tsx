@@ -30,21 +30,21 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
   ];
 
   return (
-    <div className="bg-gray-900 px-4 py-4">
+    <div className="bg-slate-900 px-6 py-4">
       <div className="overflow-x-auto">
-        <div className="flex space-x-1 min-w-max">
+        <div className="flex space-x-2 min-w-max">
           {dates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-2 py-1 rounded-lg transition-all min-w-[45px] ${
+              className={`flex flex-col items-center px-4 py-2 rounded-lg transition-all min-w-[60px] font-inter ${
                 selectedDate === item.date
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-800 text-gray-400'
+                  ? 'bg-blue-500 text-white brightness-110'
+                  : 'hover:bg-slate-800 text-gray-400'
               }`}
             >
-              <span className="text-xs mb-1">{item.day}</span>
-              <span className="text-lg font-bold">{item.date}</span>
+              <span className="text-xs font-medium mb-1">{item.day}</span>
+              <span className="text-lg font-semibold">{item.date}</span>
               <span className="text-xs mt-1">{item.time}</span>
             </button>
           ))}
