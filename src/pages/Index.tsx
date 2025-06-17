@@ -4,6 +4,8 @@ import { DateTimeline } from '@/components/DateTimeline';
 import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
+import { GlobalCurriculumForm } from '@/components/GlobalCurriculumForm';
+import { FloatingAddButton } from '@/components/FloatingAddButton';
 
 interface Topic {
   id: number;
@@ -32,6 +34,7 @@ interface Subject {
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState('2');
   const [activeTab, setActiveTab] = useState('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const [subjects, setSubjects] = useState<Subject[]>([
     {
@@ -39,7 +42,7 @@ const Index = () => {
       name: "Indian Polity and Governance",
       progress: 11,
       timeSpent: "26h 09m",
-      color: "blue",
+      color: "#3B82F6",
       isPlaying: false,
       chapters: [
         {
@@ -69,7 +72,7 @@ const Index = () => {
       name: "Indian and World Geography",
       progress: 8,
       timeSpent: "9h 01m",
-      color: "green",
+      color: "#10B981",
       isPlaying: false,
       chapters: [
         {
@@ -98,7 +101,7 @@ const Index = () => {
       name: "Indian Economy",
       progress: 33,
       timeSpent: "1h 00m",
-      color: "purple",
+      color: "#8B5CF6",
       isPlaying: false,
       chapters: [
         {
@@ -120,7 +123,7 @@ const Index = () => {
       prevSubjects.map(subject => 
         subject.id === subjectId 
           ? { ...subject, isPlaying: !subject.isPlaying }
-          : { ...subject, isPlaying: false } // Stop other subjects when one starts
+          : { ...subject, isPlaying: false }
       )
     );
     
@@ -128,10 +131,6 @@ const Index = () => {
     if (subject) {
       console.log(`${subject.isPlaying ? 'Paused' : 'Started'} timer for ${subject.name}`);
     }
-  };
-
-  const handleAddTopic = (subjectId: number, chapterId: number) => {
-    console.log(`Add new topic to subject ${subjectId}, chapter ${chapterId}`);
   };
 
   const handleToggleTopic = (subjectId: number, chapterId: number, topicId: number) => {
@@ -152,6 +151,34 @@ const Index = () => {
     );
   };
 
+  const handleFormSubmit = (formData: any) => {
+    console.log('New curriculum data:', formData);
+    
+    // Transform form data into subject format
+    const newSubject: Subject = {
+      id: Date.now(),
+      name: formData.subject,
+      progress: 0,
+      timeSpent: "0h 00m",
+      color: formData.color,
+      isPlaying: false,
+      chapters: formData.units.map((unit: any, unitIndex: number) => ({
+        id: Date.now() + unitIndex,
+        name: unit.name,
+        progress: 0,
+        topics: unit.subtopics.map((subtopic: any, topicIndex: number) => ({
+          id: Date.now() + unitIndex * 1000 + topicIndex,
+          name: subtopic.name,
+          isCompleted: false,
+          macro: subtopic.hasMacro ? subtopic.macro : undefined
+        }))
+      }))
+    };
+
+    setSubjects(prev => [...prev, newSubject]);
+    console.log('Added new subject:', newSubject);
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter">
       {/* Header */}
@@ -170,12 +197,21 @@ const Index = () => {
             key={subject.id}
             subject={subject}
             onPlayPause={handlePlayPause}
-            onAddTopic={handleAddTopic}
             onToggleTopic={handleToggleTopic}
             onUpdateSubject={handleUpdateSubject}
           />
         ))}
       </div>
+      
+      {/* Floating Add Button */}
+      <FloatingAddButton onClick={() => setIsFormOpen(true)} />
+      
+      {/* Global Curriculum Form */}
+      <GlobalCurriculumForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleFormSubmit}
+      />
       
       {/* Bottom Navigation */}
       <BottomNav />

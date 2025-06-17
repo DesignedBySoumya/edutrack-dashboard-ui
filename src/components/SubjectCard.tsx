@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Play, Pause, ChevronDown, ChevronUp, Plus, Check } from 'lucide-react';
+import { Play, Pause, ChevronDown, ChevronUp, Check } from 'lucide-react';
 
 interface Topic {
   id: number;
   name: string;
   isCompleted: boolean;
   timeSpent?: string;
+  macro?: string;
 }
 
 interface Chapter {
@@ -29,7 +30,6 @@ interface Subject {
 interface SubjectCardProps {
   subject: Subject;
   onPlayPause: (subjectId: number) => void;
-  onAddTopic?: (subjectId: number, chapterId: number) => void;
   onToggleTopic?: (subjectId: number, chapterId: number, topicId: number) => void;
   onUpdateSubject?: (updatedSubject: Subject) => void;
 }
@@ -37,7 +37,6 @@ interface SubjectCardProps {
 export const SubjectCard = ({ 
   subject, 
   onPlayPause, 
-  onAddTopic, 
   onToggleTopic,
   onUpdateSubject 
 }: SubjectCardProps) => {
@@ -45,11 +44,11 @@ export const SubjectCard = ({
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
   const [localSubject, setLocalSubject] = useState(subject);
 
-  // Increased progress circle size - 48px diameter
-  const radius = 20; // Increased from 12 to 20
+  // Progress circle with larger size (48px diameter)
+  const radius = 20;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (localSubject.progress / 100) * circumference;
+  const strokeDashoffset = circumference - (Math.round(localSubject.progress) / 100) * circumference;
 
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -72,32 +71,6 @@ export const SubjectCard = ({
     onPlayPause(localSubject.id);
     if (onUpdateSubject) {
       onUpdateSubject(updatedSubject);
-    }
-  };
-
-  const handleAddTopic = (chapterId: number) => {
-    const topicName = prompt('Enter new topic name:');
-    if (topicName && topicName.trim()) {
-      const updatedSubject = { ...localSubject };
-      const chapterIndex = updatedSubject.chapters?.findIndex(ch => ch.id === chapterId);
-      
-      if (chapterIndex !== undefined && chapterIndex >= 0 && updatedSubject.chapters) {
-        const newTopic: Topic = {
-          id: Date.now(),
-          name: topicName.trim(),
-          isCompleted: false
-        };
-        
-        updatedSubject.chapters[chapterIndex].topics.push(newTopic);
-        setLocalSubject(updatedSubject);
-        
-        if (onAddTopic) {
-          onAddTopic(localSubject.id, chapterId);
-        }
-        if (onUpdateSubject) {
-          onUpdateSubject(updatedSubject);
-        }
-      }
     }
   };
 
@@ -141,23 +114,23 @@ export const SubjectCard = ({
         {/* Main Subject Card */}
         <div className="p-4" onClick={handleToggleExpand}>
           <div className="flex items-center justify-between">
-            {/* Progress Circle - Increased size */}
+            {/* Progress Circle - Increased to 48px */}
             <div className="relative mr-4 flex-shrink-0">
-              <svg width="56" height="56" className="transform -rotate-90">
+              <svg width="48" height="48" className="transform -rotate-90">
                 <circle
-                  cx="28"
-                  cy="28"
+                  cx="24"
+                  cy="24"
                   r={radius}
                   stroke="currentColor"
-                  strokeWidth="4"
+                  strokeWidth="3"
                   fill="none"
                   className="text-gray-700"
                 />
                 <circle
-                  cx="28"
-                  cy="28"
+                  cx="24"
+                  cy="24"
                   r={radius}
-                  strokeWidth="4"
+                  strokeWidth="3"
                   fill="none"
                   className="stroke-yellow-400"
                   strokeDasharray={strokeDasharray}
@@ -167,7 +140,7 @@ export const SubjectCard = ({
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-sm font-semibold text-white">
-                  {localSubject.progress}%
+                  {Math.round(localSubject.progress)}%
                 </span>
               </div>
             </div>
@@ -188,26 +161,28 @@ export const SubjectCard = ({
               </div>
             </div>
 
-            {/* Play/Pause Button */}
-            <button
-              onClick={handlePlayPause}
-              className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all transform hover:brightness-110 flex-shrink-0 ml-4"
-            >
-              {localSubject.isPlaying ? (
-                <Pause className="w-6 h-6 text-black" />
-              ) : (
-                <Play className="w-6 h-6 text-black ml-0.5" />
-              )}
-            </button>
+            {/* Play/Pause Button - Only visible if not expanded or if this subject is playing */}
+            {(!isExpanded || localSubject.isPlaying) && (
+              <button
+                onClick={handlePlayPause}
+                className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all transform hover:brightness-110 flex-shrink-0 ml-4"
+              >
+                {localSubject.isPlaying ? (
+                  <Pause className="w-6 h-6 text-black" />
+                ) : (
+                  <Play className="w-6 h-6 text-black ml-0.5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Expanded Chapters */}
+        {/* Expanded Units (previously Chapters) */}
         {isExpanded && (
           <div className="border-t border-slate-700 transition-all duration-300 ease-in-out">
             {localSubject.chapters?.map((chapter) => (
               <div key={chapter.id} className="border-b border-slate-700 last:border-b-0">
-                {/* Chapter Header */}
+                {/* Unit Header */}
                 <div 
                   className="p-4 pl-8 cursor-pointer hover:bg-slate-750 transition-colors"
                   onClick={() => handleToggleChapter(chapter.id)}
@@ -215,7 +190,7 @@ export const SubjectCard = ({
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-white">{chapter.name}</h4>
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-400">({chapter.progress}%)</span>
+                      <span className="text-xs text-gray-400">({Math.round(chapter.progress)}%)</span>
                       {chapter.progress === 100 ? (
                         <Check className="w-4 h-4 text-green-500" />
                       ) : (
@@ -229,7 +204,7 @@ export const SubjectCard = ({
                     </div>
                   </div>
 
-                  {/* Chapter Progress Bar */}
+                  {/* Unit Progress Bar */}
                   <div className="w-full bg-gray-800 rounded h-1.5">
                     <div
                       className="h-1.5 rounded bg-blue-500 transition-all duration-300"
@@ -238,7 +213,7 @@ export const SubjectCard = ({
                   </div>
                 </div>
 
-                {/* Expanded Topics */}
+                {/* Expanded Subtopics */}
                 {expandedChapters.has(chapter.id) && (
                   <div className="px-4 pb-4 pl-12 transition-all duration-300 ease-in-out">
                     <div className="space-y-2">
@@ -261,29 +236,22 @@ export const SubjectCard = ({
                             >
                               {topic.isCompleted && <Check className="w-3 h-3 text-black" />}
                             </button>
-                            <span className={`text-sm font-medium transition-all ${
-                              topic.isCompleted ? 'text-gray-400 line-through' : 'text-gray-200'
-                            }`}>
-                              {topic.name}
-                            </span>
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-medium transition-all ${
+                                topic.isCompleted ? 'text-gray-400 line-through' : 'text-gray-200'
+                              }`}>
+                                {topic.name}
+                              </span>
+                              {topic.macro && (
+                                <span className="text-xs text-gray-500 mt-1">{topic.macro}</span>
+                              )}
+                            </div>
                           </div>
                           {topic.timeSpent && (
                             <span className="text-xs text-gray-500">{topic.timeSpent}</span>
                           )}
                         </div>
                       ))}
-
-                      {/* Add New Topic Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddTopic(chapter.id);
-                        }}
-                        className="flex items-center space-x-2 text-sm text-blue-400 hover:text-blue-300 transition-colors mt-3 border border-blue-500 rounded-lg px-3 py-2 hover:bg-blue-500/10"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span className="font-medium">Add New Topic</span>
-                      </button>
                     </div>
                   </div>
                 )}
