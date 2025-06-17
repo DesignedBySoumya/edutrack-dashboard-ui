@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Play, Pause, ChevronDown, ChevronUp, Crown, Check } from 'lucide-react';
 
@@ -46,11 +45,20 @@ export const SubjectCard = ({
   const [localSubject, setLocalSubject] = useState(subject);
   const [activeTopicId, setActiveTopicId] = useState<number | null>(null);
 
-  // Progress circle with larger size
-  const radius = 24;
+  // Progress circle with larger size and solid colors
+  const radius = 28;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (Math.round(localSubject.progress) / 100) * circumference;
+
+  const getSubjectColor = () => {
+    switch (localSubject.color) {
+      case 'blue': return '#FACC15'; // Yellow for completed
+      case 'green': return '#FACC15';
+      case 'purple': return '#FACC15';
+      default: return '#FACC15';
+    }
+  };
 
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -169,29 +177,28 @@ export const SubjectCard = ({
 
   return (
     <div className="mx-6 mb-4">
-      <div className="bg-slate-800 rounded-xl hover:shadow-lg hover:shadow-black/20 transition-all duration-200 cursor-pointer">
+      <div className="bg-[#1F2430] rounded-2xl hover:shadow-lg hover:shadow-black/20 transition-all duration-200 cursor-pointer">
         {/* Main Subject Card */}
-        <div className="p-4" onClick={handleToggleExpand}>
+        <div className="p-5" onClick={handleToggleExpand}>
           <div className="flex items-center justify-between">
-            {/* Progress Circle - Increased size */}
-            <div className="relative mr-4 flex-shrink-0">
-              <svg width="64" height="64" className="transform -rotate-90">
+            {/* Progress Circle - Updated styling */}
+            <div className="relative mr-5 flex-shrink-0">
+              <svg width="72" height="72" className="transform -rotate-90">
                 <circle
-                  cx="32"
-                  cy="32"
+                  cx="36"
+                  cy="36"
                   r={radius}
-                  stroke="currentColor"
+                  stroke="#2C2F3C"
                   strokeWidth="4"
                   fill="none"
-                  className="text-gray-700"
                 />
                 <circle
-                  cx="32"
-                  cy="32"
+                  cx="36"
+                  cy="36"
                   r={radius}
                   strokeWidth="4"
                   fill="none"
-                  className="stroke-yellow-400"
+                  stroke={getSubjectColor()}
                   strokeDasharray={strokeDasharray}
                   strokeDashoffset={strokeDashoffset}
                   strokeLinecap="round"
@@ -199,7 +206,7 @@ export const SubjectCard = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-semibold text-white">
+                <span className="text-base font-semibold text-white">
                   {Math.round(localSubject.progress)}%
                 </span>
               </div>
@@ -207,11 +214,11 @@ export const SubjectCard = ({
 
             {/* Subject Info */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-white mb-1 truncate">
+              <h3 className="text-lg font-bold text-white mb-1 truncate">
                 {localSubject.name}
               </h3>
-              <p className="text-sm text-muted-foreground mb-3">{localSubject.timeSpent}</p>
-              <div className="flex items-center text-sm text-blue-400 hover:text-blue-300 transition-colors">
+              <p className="text-sm font-medium text-[#C0C0C0] mb-3">{localSubject.timeSpent}</p>
+              <div className="flex items-center text-sm text-[#4299E1] hover:text-blue-300 transition-colors pl-2">
                 <span className="font-medium">See Details</span>
                 {isExpanded ? (
                   <ChevronUp className="w-4 h-4 ml-1" />
@@ -224,12 +231,12 @@ export const SubjectCard = ({
             {/* Play/Pause Button */}
             <button
               onClick={handlePlayPause}
-              className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200 transform hover:brightness-110 flex-shrink-0 ml-4"
+              className="w-14 h-14 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200 transform hover:brightness-110 flex-shrink-0 ml-5"
             >
               {localSubject.isPlaying ? (
-                <Pause className="w-6 h-6 text-black" />
+                <Pause className="w-7 h-7 text-black" />
               ) : (
-                <Play className="w-6 h-6 text-black ml-0.5" />
+                <Play className="w-7 h-7 text-black ml-0.5" />
               )}
             </button>
           </div>
@@ -238,17 +245,17 @@ export const SubjectCard = ({
         {/* Expanded Units */}
         {isExpanded && (
           <div className="border-t border-slate-700 transition-all duration-300 ease-in-out">
-            {localSubject.chapters?.map((chapter) => (
+            {localSubject.chapters?.filter(chapter => chapter.name.toLowerCase() !== 'car').map((chapter) => (
               <div key={chapter.id} className="border-b border-slate-700 last:border-b-0">
                 {/* Unit Header */}
                 <div 
-                  className="p-4 pl-8 cursor-pointer hover:bg-slate-750 transition-colors"
+                  className="p-5 pl-8 cursor-pointer hover:bg-slate-750 transition-colors"
                   onClick={() => handleToggleChapter(chapter.id)}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-white">{chapter.name}</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-lg font-bold text-white">{chapter.name}</h4>
                     <div className="flex items-center space-x-3">
-                      <span className="text-sm text-muted-foreground">{Math.round(chapter.progress)}%</span>
+                      <span className="text-sm font-medium text-[#C0C0C0]">{Math.round(chapter.progress)}%</span>
                       {expandedChapters.has(chapter.id) ? (
                         <ChevronUp className="w-4 h-4 text-gray-400" />
                       ) : (
@@ -257,23 +264,26 @@ export const SubjectCard = ({
                     </div>
                   </div>
 
-                  {/* Thicker Progress Bar */}
-                  <div className="w-full bg-gray-800 rounded h-3">
+                  {/* Progress Bar - Solid style */}
+                  <div className="w-full bg-[#2A2E3A] rounded-full h-2.5">
                     <div
-                      className="h-3 rounded bg-gradient-to-r from-blue-500 to-green-400 transition-all duration-500 ease-in-out"
-                      style={{ width: `${chapter.progress}%` }}
+                      className="h-2.5 rounded-full transition-all duration-500 ease-in-out"
+                      style={{ 
+                        width: `${chapter.progress}%`,
+                        backgroundColor: getSubjectColor()
+                      }}
                     ></div>
                   </div>
                 </div>
 
                 {/* Expanded Subtopics */}
                 {expandedChapters.has(chapter.id) && (
-                  <div className="px-4 pb-4 pl-12 transition-all duration-300 ease-in-out">
+                  <div className="px-5 pb-5 pl-12 transition-all duration-300 ease-in-out">
                     <div className="space-y-3">
                       {chapter.topics.map((topic) => (
                         <div 
                           key={topic.id} 
-                          className={`flex items-center justify-between py-3 px-3 rounded-lg transition-all duration-200 ${
+                          className={`flex items-center justify-between py-3 px-4 rounded-lg transition-all duration-200 ${
                             activeTopicId === topic.id ? 'bg-blue-500/10 border-l-4 border-blue-500' : 'hover:bg-blue-500/5'
                           }`}
                           onMouseEnter={() => handleTopicHover(topic.id)}
@@ -286,7 +296,7 @@ export const SubjectCard = ({
                                   e.stopPropagation();
                                   handleToggleTopic(chapter.id, topic.id);
                                 }}
-                                className="bg-green-500 text-white rounded-full p-1 hover:scale-105 transition-transform duration-200"
+                                className="bg-green-500 text-white rounded-full p-1.5 hover:scale-105 transition-transform duration-200"
                               >
                                 <Check className="w-4 h-4" />
                               </button>
@@ -296,7 +306,7 @@ export const SubjectCard = ({
                                   e.stopPropagation();
                                   handleToggleTopic(chapter.id, topic.id);
                                 }}
-                                className="w-6 h-6 rounded-full border-2 border-gray-400 bg-transparent hover:border-gray-300 hover:scale-105 transition-all duration-200"
+                                className="w-7 h-7 rounded-full border-2 border-gray-400 bg-transparent hover:border-gray-300 hover:scale-105 transition-all duration-200"
                               />
                             )}
                             <span className={`text-sm font-medium transition-all ${
@@ -318,16 +328,16 @@ export const SubjectCard = ({
                         </div>
                       ))}
 
-                      {/* Add New Subtopic Button */}
+                      {/* Add New Subtopic Button - Updated styling */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddSubtopic(chapter.id);
                         }}
-                        className="flex items-center space-x-2 text-sm text-blue-400 hover:text-blue-300 transition-colors mt-4 border border-blue-500 rounded-xl px-4 py-3 hover:bg-blue-500/10 hover:shadow-md transition-all duration-200 w-full"
+                        className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors mt-4 border-2 border-gray-500 hover:border-gray-400 rounded-xl px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full"
                       >
+                        <span>Add New Subtopic</span>
                         <Crown className="w-4 h-4" />
-                        <span className="font-medium">Add Subtopic</span>
                       </button>
                     </div>
                   </div>
@@ -335,17 +345,17 @@ export const SubjectCard = ({
               </div>
             ))}
 
-            {/* Add New Unit Button */}
-            <div className="p-4 pl-8">
+            {/* Add New Unit Button - Updated styling to match specs */}
+            <div className="p-5 pl-8">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAddUnit();
                 }}
-                className="flex items-center space-x-2 text-sm text-blue-400 hover:text-blue-300 transition-colors border border-blue-500 rounded-xl px-4 py-3 hover:bg-blue-500/10 hover:shadow-md transition-all duration-200 w-full mt-4"
+                className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors border-2 border-yellow-400 hover:border-yellow-300 rounded-xl px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full mt-4"
               >
-                <Crown className="w-5 h-5" />
-                <span className="font-medium">Add New Unit</span>
+                <span>Add New Unit</span>
+                <Crown className="w-4 h-4" />
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { DateTimeline } from '@/components/DateTimeline';
 import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
+import { Crown } from 'lucide-react';
 
 interface Topic {
   id: number;
@@ -152,6 +153,22 @@ const Index = () => {
     );
   };
 
+  const handleAddNewSubject = () => {
+    const subjectName = prompt('Enter new subject name:');
+    if (subjectName && subjectName.trim()) {
+      const newSubject: Subject = {
+        id: Date.now(),
+        name: subjectName.trim(),
+        progress: 0,
+        timeSpent: "0h 00m",
+        color: "blue",
+        isPlaying: false,
+        chapters: []
+      };
+      setSubjects(prevSubjects => [...prevSubjects, newSubject]);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter">
       {/* Header */}
@@ -175,6 +192,17 @@ const Index = () => {
             onUpdateSubject={handleUpdateSubject}
           />
         ))}
+
+        {/* Add New Subject Button */}
+        <div className="mx-6 mt-4">
+          <button
+            onClick={handleAddNewSubject}
+            className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
+          >
+            <span>Add New Subject</span>
+            <Crown className="w-5 h-5" />
+          </button>
+        </div>
       </div>
       
       {/* Bottom Navigation */}
