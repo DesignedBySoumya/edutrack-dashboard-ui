@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { DateTimeline } from '@/components/DateTimeline';
@@ -170,38 +171,68 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter">
+    <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter overflow-x-hidden">
       {/* Header */}
       <Header />
       
-      {/* Date Timeline */}
-      <DateTimeline selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+      {/* Date Timeline - Fixed positioning */}
+      <div className="sticky top-0 z-10 bg-slate-900">
+        <DateTimeline selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+      </div>
       
       {/* Summary Box with Filters and Stats */}
       <SummaryBox activeTab={activeTab} onTabChange={setActiveTab} />
       
-      {/* Subject Cards */}
-      <div className="pb-4">
-        {subjects.map((subject) => (
-          <SubjectCard
-            key={subject.id}
-            subject={subject}
-            onPlayPause={handlePlayPause}
-            onAddTopic={handleAddTopic}
-            onToggleTopic={handleToggleTopic}
-            onUpdateSubject={handleUpdateSubject}
-          />
-        ))}
+      {/* Subject Cards Container - Responsive Grid */}
+      <div className="px-4 sm:px-6 pb-4 max-w-[1440px] mx-auto">
+        {/* Mobile & Tablet: Stacked layout */}
+        <div className="block lg:hidden space-y-4">
+          {subjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={subject}
+              onPlayPause={handlePlayPause}
+              onAddTopic={handleAddTopic}
+              onToggleTopic={handleToggleTopic}
+              onUpdateSubject={handleUpdateSubject}
+            />
+          ))}
+          
+          {/* Add New Subject Button - Mobile/Tablet */}
+          <div className="mt-4">
+            <button
+              onClick={handleAddNewSubject}
+              className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
+            >
+              <span>Add New Subject</span>
+              <Crown className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
-        {/* Add New Subject Button */}
-        <div className="mx-6 mt-4">
-          <button
-            onClick={handleAddNewSubject}
-            className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
-          >
-            <span>Add New Subject</span>
-            <Crown className="w-5 h-5" />
-          </button>
+        {/* Desktop: 3-column grid layout */}
+        <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+          {subjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={subject}
+              onPlayPause={handlePlayPause}
+              onAddTopic={handleAddTopic}
+              onToggleTopic={handleToggleTopic}
+              onUpdateSubject={handleUpdateSubject}
+            />
+          ))}
+          
+          {/* Add New Subject Button - Desktop */}
+          <div className="flex items-center justify-center">
+            <button
+              onClick={handleAddNewSubject}
+              className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg max-w-md"
+            >
+              <span>Add New Subject</span>
+              <Crown className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
       
