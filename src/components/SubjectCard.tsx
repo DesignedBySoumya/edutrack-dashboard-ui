@@ -45,7 +45,9 @@ export const SubjectCard = ({
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
   const [localSubject, setLocalSubject] = useState(subject);
 
-  const circumference = 2 * Math.PI * 12;
+  // Increased progress circle size - 48px diameter
+  const radius = 20; // Increased from 12 to 20
+  const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (localSubject.progress / 100) * circumference;
 
@@ -139,22 +141,22 @@ export const SubjectCard = ({
         {/* Main Subject Card */}
         <div className="p-4" onClick={handleToggleExpand}>
           <div className="flex items-center justify-between">
-            {/* Progress Circle */}
+            {/* Progress Circle - Increased size */}
             <div className="relative mr-4 flex-shrink-0">
-              <svg width="48" height="48" className="transform -rotate-90">
+              <svg width="56" height="56" className="transform -rotate-90">
                 <circle
-                  cx="24"
-                  cy="24"
-                  r="12"
+                  cx="28"
+                  cy="28"
+                  r={radius}
                   stroke="currentColor"
                   strokeWidth="4"
                   fill="none"
                   className="text-gray-700"
                 />
                 <circle
-                  cx="24"
-                  cy="24"
-                  r="12"
+                  cx="28"
+                  cy="28"
+                  r={radius}
                   strokeWidth="4"
                   fill="none"
                   className="stroke-yellow-400"
@@ -164,7 +166,7 @@ export const SubjectCard = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-semibold text-white">
+                <span className="text-sm font-semibold text-white">
                   {localSubject.progress}%
                 </span>
               </div>
@@ -189,12 +191,12 @@ export const SubjectCard = ({
             {/* Play/Pause Button */}
             <button
               onClick={handlePlayPause}
-              className="w-10 h-10 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all transform hover:brightness-110 flex-shrink-0 ml-4"
+              className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all transform hover:brightness-110 flex-shrink-0 ml-4"
             >
               {localSubject.isPlaying ? (
-                <Pause className="w-5 h-5 text-black" />
+                <Pause className="w-6 h-6 text-black" />
               ) : (
-                <Play className="w-5 h-5 text-black ml-0.5" />
+                <Play className="w-6 h-6 text-black ml-0.5" />
               )}
             </button>
           </div>

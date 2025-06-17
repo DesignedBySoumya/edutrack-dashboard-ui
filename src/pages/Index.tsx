@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { DateTimeline } from '@/components/DateTimeline';
-import { SubjectTabs } from '@/components/SubjectTabs';
 import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
@@ -161,11 +160,8 @@ const Index = () => {
       {/* Date Timeline */}
       <DateTimeline selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       
-      {/* Summary Box */}
-      <SummaryBox />
-      
-      {/* Subject Tabs */}
-      <SubjectTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Summary Box with Filters and Stats */}
+      <SummaryBox activeTab={activeTab} onTabChange={setActiveTab} />
       
       {/* Subject Cards */}
       <div className="pb-4">
