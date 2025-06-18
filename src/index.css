@@ -45,3 +45,13 @@
     @apply bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-lg p-3 text-white shadow-xl;
   }
 }
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

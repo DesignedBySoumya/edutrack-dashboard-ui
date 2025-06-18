@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface DateTimelineProps {
@@ -61,7 +60,7 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
 
       {/* Mobile view - horizontal scrollable */}
       <div className="block md:hidden">
-        <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2 scrollbar-hide">
           {mobileDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
