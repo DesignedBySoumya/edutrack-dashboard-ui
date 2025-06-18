@@ -32,37 +32,20 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
     { date: '19', day: 'Jun', time: '0:00' },
   ];
 
-  return (
-    <div className="bg-slate-900 px-4 sm:px-6 py-4 border-b border-slate-700">
-      {/* Mobile: Scrollable horizontal layout */}
-      <div className="block sm:hidden">
-        <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 scrollbar-hide">
-          {dates.slice(0, 10).map((item) => (
-            <button
-              key={`${item.day}-${item.date}`}
-              onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all font-inter text-xs flex-shrink-0 snap-center min-w-[60px] ${
-                selectedDate === item.date
-                  ? 'bg-blue-500 text-white brightness-110'
-                  : 'hover:bg-slate-800 text-gray-400'
-              }`}
-            >
-              <span className="font-medium mb-1 text-xs">{item.day}</span>
-              <span className="text-sm font-semibold">{item.date}</span>
-              <span className="mt-1 text-xs">{item.time}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+  // Show 7 days on mobile, all on tablet/desktop
+  const visibleDates = dates.slice(0, 22);
+  const mobileDates = dates.slice(0, 7);
 
-      {/* Tablet: Show more dates, still scrollable */}
-      <div className="hidden sm:block md:hidden">
-        <div className="flex gap-2 overflow-x-auto scroll-smooth pb-2 scrollbar-hide">
-          {dates.slice(0, 15).map((item) => (
+  return (
+    <div className="bg-slate-900 px-6 py-4">
+      {/* Desktop and Tablet view - horizontal layout */}
+      <div className="hidden md:block">
+        <div className="flex gap-2 w-full justify-between">
+          {visibleDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs flex-shrink-0 min-w-[55px] ${
+              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs min-w-0 flex-shrink-0 ${
                 selectedDate === item.date
                   ? 'bg-blue-500 text-white brightness-110'
                   : 'hover:bg-slate-800 text-gray-400'
@@ -76,14 +59,14 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
         </div>
       </div>
 
-      {/* Desktop: Full width, no scroll, evenly distributed */}
-      <div className="hidden md:block">
-        <div className="grid grid-cols-22 gap-1 w-full max-w-[1400px] mx-auto">
-          {dates.map((item) => (
+      {/* Mobile view - horizontal scrollable */}
+      <div className="block md:hidden">
+        <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2 scrollbar-hide">
+          {mobileDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs ${
+              className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all font-inter text-xs flex-shrink-0 min-w-[60px] ${
                 selectedDate === item.date
                   ? 'bg-blue-500 text-white brightness-110'
                   : 'hover:bg-slate-800 text-gray-400'

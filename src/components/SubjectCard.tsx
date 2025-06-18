@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Play, Pause, ChevronDown, ChevronUp, Crown, Check } from 'lucide-react';
 
@@ -46,7 +45,7 @@ export const SubjectCard = ({
   const [localSubject, setLocalSubject] = useState(subject);
   const [activeTopicId, setActiveTopicId] = useState<number | null>(null);
 
-  // Progress circle with responsive sizing
+  // Progress circle with larger size and solid colors
   const radius = 28;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -54,7 +53,7 @@ export const SubjectCard = ({
 
   const getSubjectColor = () => {
     switch (localSubject.color) {
-      case 'blue': return '#FACC15';
+      case 'blue': return '#FACC15'; // Yellow for completed
       case 'green': return '#FACC15';
       case 'purple': return '#FACC15';
       default: return '#FACC15';
@@ -177,13 +176,13 @@ export const SubjectCard = ({
   };
 
   return (
-    <div className="w-full">
-      <div className="bg-[#1F2430] rounded-2xl hover:shadow-lg hover:shadow-black/20 transition-all duration-200 cursor-pointer max-w-full">
+    <div className="mx-6 mb-4">
+      <div className="bg-[#1F2430] rounded-2xl hover:shadow-lg hover:shadow-black/20 transition-all duration-200 cursor-pointer">
         {/* Main Subject Card */}
-        <div className="p-4 sm:p-5" onClick={handleToggleExpand}>
-          <div className="flex items-center justify-between gap-4">
-            {/* Progress Circle - Responsive sizing */}
-            <div className="relative flex-shrink-0">
+        <div className="p-5" onClick={handleToggleExpand}>
+          <div className="flex items-center justify-between">
+            {/* Progress Circle - Updated styling */}
+            <div className="relative mr-5 flex-shrink-0">
               <svg width="72" height="72" className="transform -rotate-90">
                 <circle
                   cx="36"
@@ -207,18 +206,18 @@ export const SubjectCard = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm sm:text-base font-semibold text-white">
+                <span className="text-base font-semibold text-white">
                   {Math.round(localSubject.progress)}%
                 </span>
               </div>
             </div>
 
-            {/* Subject Info - Responsive typography */}
+            {/* Subject Info */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-white mb-1 truncate">
+              <h3 className="text-lg font-bold text-white mb-1 truncate">
                 {localSubject.name}
               </h3>
-              <p className="text-sm font-medium text-[#C0C0C0] mb-2 sm:mb-3">{localSubject.timeSpent}</p>
+              <p className="text-sm font-medium text-[#C0C0C0] mb-3">{localSubject.timeSpent}</p>
               <div className="flex items-center text-sm text-[#4299E1] hover:text-blue-300 transition-colors pl-2">
                 <span className="font-medium">See Details</span>
                 {isExpanded ? (
@@ -229,15 +228,15 @@ export const SubjectCard = ({
               </div>
             </div>
 
-            {/* Play/Pause Button - Responsive sizing */}
+            {/* Play/Pause Button */}
             <button
               onClick={handlePlayPause}
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200 transform hover:brightness-110 flex-shrink-0"
+              className="w-14 h-14 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200 transform hover:brightness-110 flex-shrink-0 ml-5"
             >
               {localSubject.isPlaying ? (
-                <Pause className="w-5 h-5 sm:w-7 sm:h-7 text-black" />
+                <Pause className="w-7 h-7 text-black" />
               ) : (
-                <Play className="w-5 h-5 sm:w-7 sm:h-7 text-black ml-0.5" />
+                <Play className="w-7 h-7 text-black ml-0.5" />
               )}
             </button>
           </div>
@@ -250,12 +249,12 @@ export const SubjectCard = ({
               <div key={chapter.id} className="border-b border-slate-700 last:border-b-0">
                 {/* Unit Header */}
                 <div 
-                  className="p-4 sm:p-5 pl-6 sm:pl-8 cursor-pointer hover:bg-slate-750 transition-colors"
+                  className="p-5 pl-8 cursor-pointer hover:bg-slate-750 transition-colors"
                   onClick={() => handleToggleChapter(chapter.id)}
                 >
-                  <div className="flex items-center justify-between mb-2 gap-4">
-                    <h4 className="text-base sm:text-lg font-bold text-white truncate">{chapter.name}</h4>
-                    <div className="flex items-center space-x-3 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-lg font-bold text-white">{chapter.name}</h4>
+                    <div className="flex items-center space-x-3">
                       <span className="text-sm font-medium text-[#C0C0C0]">{Math.round(chapter.progress)}%</span>
                       {expandedChapters.has(chapter.id) ? (
                         <ChevronUp className="w-4 h-4 text-gray-400" />
@@ -265,7 +264,7 @@ export const SubjectCard = ({
                     </div>
                   </div>
 
-                  {/* Progress Bar - Responsive */}
+                  {/* Progress Bar - Solid style */}
                   <div className="w-full bg-[#2A2E3A] rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full transition-all duration-500 ease-in-out"
@@ -279,25 +278,25 @@ export const SubjectCard = ({
 
                 {/* Expanded Subtopics */}
                 {expandedChapters.has(chapter.id) && (
-                  <div className="px-4 sm:px-5 pb-4 sm:pb-5 pl-8 sm:pl-12 transition-all duration-300 ease-in-out">
+                  <div className="px-5 pb-5 pl-12 transition-all duration-300 ease-in-out">
                     <div className="space-y-3">
                       {chapter.topics.map((topic) => (
                         <div 
                           key={topic.id} 
-                          className={`flex items-center justify-between py-3 px-3 sm:px-4 rounded-lg transition-all duration-200 gap-3 ${
+                          className={`flex items-center justify-between py-3 px-4 rounded-lg transition-all duration-200 ${
                             activeTopicId === topic.id ? 'bg-blue-500/10 border-l-4 border-blue-500' : 'hover:bg-blue-500/5'
                           }`}
                           onMouseEnter={() => handleTopicHover(topic.id)}
                           onMouseLeave={handleTopicLeave}
                         >
-                          <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <div className="flex items-center space-x-3">
                             {topic.isCompleted ? (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleToggleTopic(chapter.id, topic.id);
                                 }}
-                                className="bg-green-500 text-white rounded-full p-1.5 hover:scale-105 transition-transform duration-200 flex-shrink-0"
+                                className="bg-green-500 text-white rounded-full p-1.5 hover:scale-105 transition-transform duration-200"
                               >
                                 <Check className="w-4 h-4" />
                               </button>
@@ -307,18 +306,18 @@ export const SubjectCard = ({
                                   e.stopPropagation();
                                   handleToggleTopic(chapter.id, topic.id);
                                 }}
-                                className="w-7 h-7 rounded-full border-2 border-gray-400 bg-transparent hover:border-gray-300 hover:scale-105 transition-all duration-200 flex-shrink-0"
+                                className="w-7 h-7 rounded-full border-2 border-gray-400 bg-transparent hover:border-gray-300 hover:scale-105 transition-all duration-200"
                               />
                             )}
-                            <span className={`text-sm font-medium transition-all truncate ${
+                            <span className={`text-sm font-medium transition-all ${
                               topic.isCompleted ? 'text-gray-400 line-through' : 'text-gray-200'
                             }`}>
                               {topic.name}
                             </span>
                           </div>
-                          <div className="flex items-center space-x-2 flex-shrink-0">
+                          <div className="flex items-center space-x-2">
                             {topic.timeSpent && (
-                              <span className="text-xs text-gray-500 hidden sm:block">{topic.timeSpent}</span>
+                              <span className="text-xs text-gray-500">{topic.timeSpent}</span>
                             )}
                             {!topic.isCompleted && activeTopicId === topic.id && (
                               <button className="w-8 h-8 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200">
@@ -329,13 +328,13 @@ export const SubjectCard = ({
                         </div>
                       ))}
 
-                      {/* Add New Subtopic Button */}
+                      {/* Add New Subtopic Button - Updated styling */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddSubtopic(chapter.id);
                         }}
-                        className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors mt-4 border-2 border-gray-500 hover:border-gray-400 rounded-xl px-4 sm:px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full"
+                        className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors mt-4 border-2 border-gray-500 hover:border-gray-400 rounded-xl px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full"
                       >
                         <span>Add New Subtopic</span>
                         <Crown className="w-4 h-4" />
@@ -346,14 +345,14 @@ export const SubjectCard = ({
               </div>
             ))}
 
-            {/* Add New Unit Button */}
-            <div className="p-4 sm:p-5 pl-6 sm:pl-8">
+            {/* Add New Unit Button - Updated styling to match specs */}
+            <div className="p-5 pl-8">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAddUnit();
                 }}
-                className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors border-2 border-yellow-400 hover:border-yellow-300 rounded-xl px-4 sm:px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full mt-4"
+                className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors border-2 border-yellow-400 hover:border-yellow-300 rounded-xl px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full mt-4"
               >
                 <span>Add New Unit</span>
                 <Crown className="w-4 h-4" />
