@@ -32,20 +32,20 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
     { date: '19', day: 'Jun', time: '0:00' },
   ];
 
-  // Show 7 days on mobile, 22 on desktop
+  // Show 7 days on mobile, all on tablet/desktop
   const visibleDates = dates.slice(0, 22);
   const mobileDates = dates.slice(0, 7);
 
   return (
     <div className="bg-slate-900 px-6 py-4">
-      {/* Desktop view - 22 days */}
+      {/* Desktop and Tablet view - horizontal layout */}
       <div className="hidden md:block">
-        <div className="grid grid-cols-22 gap-1 w-full">
+        <div className="flex gap-2 w-full justify-between">
           {visibleDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs ${
+              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs min-w-0 flex-shrink-0 ${
                 selectedDate === item.date
                   ? 'bg-blue-500 text-white brightness-110'
                   : 'hover:bg-slate-800 text-gray-400'
@@ -59,14 +59,14 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
         </div>
       </div>
 
-      {/* Mobile view - 7 days */}
+      {/* Mobile view - horizontal scrollable */}
       <div className="block md:hidden">
-        <div className="grid grid-cols-7 gap-1 w-full">
+        <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {mobileDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs ${
+              className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all font-inter text-xs flex-shrink-0 min-w-[60px] ${
                 selectedDate === item.date
                   ? 'bg-blue-500 text-white brightness-110'
                   : 'hover:bg-slate-800 text-gray-400'
@@ -78,6 +78,11 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
             </button>
           ))}
         </div>
+        <style jsx>{`
+          .flex::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
     </div>
   );
