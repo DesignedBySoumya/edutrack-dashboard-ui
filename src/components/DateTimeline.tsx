@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface DateTimelineProps {
@@ -77,11 +78,6 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
             </button>
           ))}
         </div>
-        <style jsx>{`
-          .flex::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
       </div>
     </div>
   );
