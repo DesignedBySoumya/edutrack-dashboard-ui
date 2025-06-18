@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Grid3X3, Menu, FileText, BarChart3 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export const BottomNav = () => {
   return (
@@ -16,11 +15,9 @@ export const BottomNav = () => {
         <button className="flex flex-col items-center space-y-1 text-gray-400 hover:text-white transition-colors">
           <FileText className="w-6 h-6" />
         </button>
-        <Link to="/dashboard">
-          <button className="flex flex-col items-center space-y-1 text-gray-400 hover:text-white transition-colors">
-            <BarChart3 className="w-6 h-6" />
-          </button>
-        </Link>
+        <button className="flex flex-col items-center space-y-1 text-gray-400 hover:text-white transition-colors">
+          <BarChart3 className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );

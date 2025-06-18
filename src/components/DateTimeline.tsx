@@ -32,20 +32,20 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
     { date: '19', day: 'Jun', time: '0:00' },
   ];
 
-  // Show 7 days on mobile, all on tablet/desktop
+  // Show 7 days on mobile, 22 on desktop
   const visibleDates = dates.slice(0, 22);
   const mobileDates = dates.slice(0, 7);
 
   return (
     <div className="bg-slate-900 px-6 py-4">
-      {/* Desktop and Tablet view - horizontal layout */}
+      {/* Desktop view - 22 days */}
       <div className="hidden md:block">
-        <div className="flex gap-2 w-full justify-between">
+        <div className="grid grid-cols-22 gap-1 w-full">
           {visibleDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs min-w-0 flex-shrink-0 ${
+              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs ${
                 selectedDate === item.date
                   ? 'bg-blue-500 text-white brightness-110'
                   : 'hover:bg-slate-800 text-gray-400'
@@ -59,14 +59,14 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
         </div>
       </div>
 
-      {/* Mobile view - horizontal scrollable */}
+      {/* Mobile view - 7 days */}
       <div className="block md:hidden">
-        <div className="flex gap-3 overflow-x-auto scroll-smooth pb-2 scrollbar-hide">
+        <div className="grid grid-cols-7 gap-1 w-full">
           {mobileDates.map((item) => (
             <button
               key={`${item.day}-${item.date}`}
               onClick={() => onDateSelect(item.date)}
-              className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all font-inter text-xs flex-shrink-0 min-w-[60px] ${
+              className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs ${
                 selectedDate === item.date
                   ? 'bg-blue-500 text-white brightness-110'
                   : 'hover:bg-slate-800 text-gray-400'
