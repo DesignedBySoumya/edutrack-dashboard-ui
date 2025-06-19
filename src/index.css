@@ -34,27 +34,15 @@
   }
   body {
     @apply bg-background text-foreground;
-    overflow-x: hidden;
   }
   html {
     @apply scroll-smooth;
-    overflow-x: hidden;
   }
 }
 
 @layer components {
   .tooltip {
     @apply bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-lg p-3 text-white shadow-xl;
-  }
-  
-  .chartContainer {
-    @apply w-full max-w-full;
-  }
-  
-  @media (max-width: 400px) {
-    .chartContainer {
-      @apply px-3 mx-auto;
-    }
   }
 }
 
