@@ -1,5 +1,10 @@
+
 import React, { useState } from 'react';
-import { Play, Pause, ChevronDown, ChevronUp, Crown, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { SubjectProgress } from './subject-card/SubjectProgress';
+import { ChapterSection } from './subject-card/ChapterSection';
+import { SubjectCardActions } from './subject-card/SubjectCardActions';
+import { AddUnitButton } from './subject-card/AddUnitButton';
 
 interface Topic {
   id: number;
@@ -45,21 +50,6 @@ export const SubjectCard = ({
   const [localSubject, setLocalSubject] = useState(subject);
   const [activeTopicId, setActiveTopicId] = useState<number | null>(null);
 
-  // Progress circle with larger size and solid colors
-  const radius = 28;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (Math.round(localSubject.progress) / 100) * circumference;
-
-  const getSubjectColor = () => {
-    switch (localSubject.color) {
-      case 'blue': return '#FACC15'; // Yellow for completed
-      case 'green': return '#FACC15';
-      case 'purple': return '#FACC15';
-      default: return '#FACC15';
-    }
-  };
-
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -84,7 +74,8 @@ export const SubjectCard = ({
     }
   };
 
-  const handleAddUnit = () => {
+  const handleAddUnit = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const unitName = prompt('Enter new unit name:');
     if (unitName && unitName.trim()) {
       const updatedSubject = { ...localSubject };
@@ -181,36 +172,7 @@ export const SubjectCard = ({
         {/* Main Subject Card */}
         <div className="p-5" onClick={handleToggleExpand}>
           <div className="flex items-center justify-between">
-            {/* Progress Circle - Updated styling */}
-            <div className="relative mr-5 flex-shrink-0">
-              <svg width="72" height="72" className="transform -rotate-90">
-                <circle
-                  cx="36"
-                  cy="36"
-                  r={radius}
-                  stroke="#2C2F3C"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <circle
-                  cx="36"
-                  cy="36"
-                  r={radius}
-                  strokeWidth="4"
-                  fill="none"
-                  stroke={getSubjectColor()}
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  style={{ transition: 'stroke-dashoffset 0.3s ease-in-out' }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-base font-semibold text-white">
-                  {Math.round(localSubject.progress)}%
-                </span>
-              </div>
-            </div>
+            <SubjectProgress progress={localSubject.progress} color={localSubject.color} />
 
             {/* Subject Info */}
             <div className="flex-1 min-w-0">
@@ -228,17 +190,10 @@ export const SubjectCard = ({
               </div>
             </div>
 
-            {/* Play/Pause Button */}
-            <button
-              onClick={handlePlayPause}
-              className="w-14 h-14 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200 transform hover:brightness-110 flex-shrink-0 ml-5"
-            >
-              {localSubject.isPlaying ? (
-                <Pause className="w-7 h-7 text-black" />
-              ) : (
-                <Play className="w-7 h-7 text-black ml-0.5" />
-              )}
-            </button>
+            <SubjectCardActions 
+              isPlaying={localSubject.isPlaying} 
+              onPlayPause={handlePlayPause} 
+            />
           </div>
         </div>
 
@@ -246,118 +201,20 @@ export const SubjectCard = ({
         {isExpanded && (
           <div className="border-t border-slate-700 transition-all duration-300 ease-in-out">
             {localSubject.chapters?.filter(chapter => chapter.name.toLowerCase() !== 'car').map((chapter) => (
-              <div key={chapter.id} className="border-b border-slate-700 last:border-b-0">
-                {/* Unit Header */}
-                <div 
-                  className="p-5 pl-8 cursor-pointer hover:bg-slate-750 transition-colors"
-                  onClick={() => handleToggleChapter(chapter.id)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-lg font-bold text-white">{chapter.name}</h4>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-[#C0C0C0]">{Math.round(chapter.progress)}%</span>
-                      {expandedChapters.has(chapter.id) ? (
-                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Progress Bar - Solid style */}
-                  <div className="w-full bg-[#2A2E3A] rounded-full h-2.5">
-                    <div
-                      className="h-2.5 rounded-full transition-all duration-500 ease-in-out"
-                      style={{ 
-                        width: `${chapter.progress}%`,
-                        backgroundColor: getSubjectColor()
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Expanded Subtopics */}
-                {expandedChapters.has(chapter.id) && (
-                  <div className="px-5 pb-5 pl-12 transition-all duration-300 ease-in-out">
-                    <div className="space-y-3">
-                      {chapter.topics.map((topic) => (
-                        <div 
-                          key={topic.id} 
-                          className={`flex items-center justify-between py-3 px-4 rounded-lg transition-all duration-200 ${
-                            activeTopicId === topic.id ? 'bg-blue-500/10 border-l-4 border-blue-500' : 'hover:bg-blue-500/5'
-                          }`}
-                          onMouseEnter={() => handleTopicHover(topic.id)}
-                          onMouseLeave={handleTopicLeave}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {topic.isCompleted ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleTopic(chapter.id, topic.id);
-                                }}
-                                className="bg-green-500 text-white rounded-full p-1.5 hover:scale-105 transition-transform duration-200"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleTopic(chapter.id, topic.id);
-                                }}
-                                className="w-7 h-7 rounded-full border-2 border-gray-400 bg-transparent hover:border-gray-300 hover:scale-105 transition-all duration-200"
-                              />
-                            )}
-                            <span className={`text-sm font-medium transition-all ${
-                              topic.isCompleted ? 'text-gray-400 line-through' : 'text-gray-200'
-                            }`}>
-                              {topic.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {topic.timeSpent && (
-                              <span className="text-xs text-gray-500">{topic.timeSpent}</span>
-                            )}
-                            {!topic.isCompleted && activeTopicId === topic.id && (
-                              <button className="w-8 h-8 rounded-full bg-yellow-400 hover:bg-orange-400 flex items-center justify-center transition-all duration-200">
-                                <Play className="w-4 h-4 text-black ml-0.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Add New Subtopic Button - Updated styling */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddSubtopic(chapter.id);
-                        }}
-                        className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors mt-4 border-2 border-gray-500 hover:border-gray-400 rounded-xl px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full"
-                      >
-                        <span>Add New Subtopic</span>
-                        <Crown className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ChapterSection
+                key={chapter.id}
+                chapter={chapter}
+                isExpanded={expandedChapters.has(chapter.id)}
+                activeTopicId={activeTopicId}
+                onToggleExpand={handleToggleChapter}
+                onAddSubtopic={handleAddSubtopic}
+                onToggleTopic={handleToggleTopic}
+                onTopicHover={handleTopicHover}
+                onTopicLeave={handleTopicLeave}
+              />
             ))}
 
-            {/* Add New Unit Button - Updated styling to match specs */}
-            <div className="p-5 pl-8">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddUnit();
-                }}
-                className="flex items-center justify-center space-x-2 text-sm font-bold text-gray-300 hover:text-white transition-colors border-2 border-yellow-400 hover:border-yellow-300 rounded-xl px-5 py-2.5 hover:shadow-sm transition-all duration-200 w-full mt-4"
-              >
-                <span>Add New Unit</span>
-                <Crown className="w-4 h-4" />
-              </button>
-            </div>
+            <AddUnitButton onAddUnit={handleAddUnit} />
           </div>
         )}
       </div>
