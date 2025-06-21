@@ -25,11 +25,11 @@ export const TimetableGrid = ({ timeBlocks, onCellClick }: TimetableGridProps) =
   const getCurrentDate = () => {
     const today = new Date();
     const currentDay = today.getDay();
-    return currentDay === 0 ? 6 : currentDay - 1; // Convert Sunday (0) to 6, Monday (1) to 0, etc.
+    return currentDay === 0 ? 6 : currentDay - 1;
   };
 
-  const hasTimeBlock = (day: string, time: string) => {
-    return timeBlocks.find(block => 
+  const getTimeBlocksForCell = (day: string, time: string) => {
+    return timeBlocks.filter(block => 
       block.day.toLowerCase() === day.toLowerCase() && 
       block.startTime === time
     );
@@ -68,20 +68,23 @@ export const TimetableGrid = ({ timeBlocks, onCellClick }: TimetableGridProps) =
               {time}
             </div>
             {days.map((day) => {
-              const timeBlock = hasTimeBlock(day, time);
+              const cellBlocks = getTimeBlocksForCell(day, time);
               return (
                 <div
                   key={`${day}-${time}`}
-                  className="h-8 border border-slate-700 rounded cursor-pointer hover:bg-slate-800 transition-colors flex items-center justify-center relative"
+                  className="h-12 border border-slate-700 rounded cursor-pointer hover:bg-slate-800 transition-colors flex flex-col items-center justify-center p-1 relative"
                   onClick={() => onCellClick?.(day, time)}
                 >
-                  {timeBlock && (
+                  {cellBlocks.map((block, index) => (
                     <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: timeBlock.color }}
-                      title={`${timeBlock.category} - ${timeBlock.startTime} to ${timeBlock.endTime}`}
-                    />
-                  )}
+                      key={block.id}
+                      className="w-full bg-[#2a2a2f] rounded-md px-2 py-1 mb-1 text-xs text-white flex items-center justify-center"
+                      style={{ backgroundColor: `${block.color}20`, borderLeft: `3px solid ${block.color}` }}
+                      title={`${block.category} - ${block.startTime} to ${block.endTime}`}
+                    >
+                      <span className="truncate">📖 {block.category.split(' ')[0]}</span>
+                    </div>
+                  ))}
                 </div>
               );
             })}

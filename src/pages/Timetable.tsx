@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TimetableGrid } from '@/components/TimetableGrid';
 import { AddTimetableModal } from '@/components/AddTimetableModal';
 import { FloatingButton } from '@/components/FloatingButton';
 import { BottomNav } from '@/components/BottomNav';
+import { ArrowLeft } from 'lucide-react';
 
 interface TimeBlock {
   id: string;
@@ -33,23 +35,32 @@ const categoryColors: { [key: string]: string } = {
 };
 
 const TimetablePage = () => {
-  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([
-    {
-      id: '1',
-      day: 'Wed',
-      startTime: '6:00 PM',
-      endTime: '7:00 PM',
-      category: 'Indian Polity and Governance',
-      color: '#3b82f6'
-    }
-  ]);
+  const navigate = useNavigate();
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const savedTimeBlocks = localStorage.getItem('timetable');
+    if (savedTimeBlocks) {
+      try {
+        setTimeBlocks(JSON.parse(savedTimeBlocks));
+      } catch (error) {
+        console.error('Failed to parse saved timetable data:', error);
+      }
+    }
+  }, []);
+
+  // Save data to localStorage whenever timeBlocks changes
+  useEffect(() => {
+    localStorage.setItem('timetable', JSON.stringify(timeBlocks));
+  }, [timeBlocks]);
 
   const handleSaveSchedule = (scheduleData: ScheduleData) => {
     const newTimeBlocks: TimeBlock[] = [];
 
     scheduleData.days.forEach((day) => {
-      const dayShort = day.substring(0, 3); // Convert "Monday" to "Mon"
+      const dayShort = day.substring(0, 3);
       const newBlock: TimeBlock = {
         id: `${Date.now()}-${day}`,
         day: dayShort,
@@ -65,7 +76,6 @@ const TimetablePage = () => {
 
     if (scheduleData.notifications) {
       console.log('Notifications enabled for:', scheduleData.category);
-      // TODO: Implement notification scheduling
     }
   };
 
@@ -79,7 +89,6 @@ const TimetablePage = () => {
 
   const handleCellClick = (day: string, time: string) => {
     console.log(`Clicked cell: ${day} at ${time}`);
-    // TODO: Implement cell click for editing existing blocks
   };
 
   return (
@@ -87,6 +96,17 @@ const TimetablePage = () => {
       <Header />
       
       <div className="px-6 py-6">
+        {/* Back button and header */}
+        <div className="flex items-center mb-6">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors mr-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm">Back to Home</span>
+          </button>
+        </div>
+
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">Study Timetable</h1>
           <p className="text-gray-400 text-sm">Organize your study schedule and track your progress</p>
