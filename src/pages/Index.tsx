@@ -4,6 +4,7 @@ import { DateTimeline } from '@/components/DateTimeline';
 import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
+import { StudySession } from '@/components/StudySession';
 import { Crown } from 'lucide-react';
 
 interface Topic {
@@ -33,6 +34,7 @@ interface Subject {
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState('2');
   const [activeTab, setActiveTab] = useState('all');
+  const [activeStudySubject, setActiveStudySubject] = useState<Subject | null>(null);
 
   const [subjects, setSubjects] = useState<Subject[]>([
     {
@@ -117,17 +119,36 @@ const Index = () => {
   ]);
 
   const handlePlayPause = (subjectId: number) => {
-    setSubjects(prevSubjects => 
-      prevSubjects.map(subject => 
-        subject.id === subjectId 
-          ? { ...subject, isPlaying: !subject.isPlaying }
-          : { ...subject, isPlaying: false } // Stop other subjects when one starts
-      )
-    );
-    
     const subject = subjects.find(s => s.id === subjectId);
     if (subject) {
-      console.log(`${subject.isPlaying ? 'Paused' : 'Started'} timer for ${subject.name}`);
+      // Start study session for this subject
+      setActiveStudySubject(subject);
+      
+      // Update the subject's playing state
+      setSubjects(prevSubjects => 
+        prevSubjects.map(s => 
+          s.id === subjectId 
+            ? { ...s, isPlaying: true }
+            : { ...s, isPlaying: false }
+        )
+      );
+      
+      console.log(`Started study session for ${subject.name}`);
+    }
+  };
+
+  const handleEndStudySession = () => {
+    if (activeStudySubject) {
+      // Stop the study session
+      setSubjects(prevSubjects => 
+        prevSubjects.map(s => 
+          s.id === activeStudySubject.id 
+            ? { ...s, isPlaying: false }
+            : s
+        )
+      );
+      setActiveStudySubject(null);
+      console.log('Ended study session');
     }
   };
 
@@ -177,33 +198,43 @@ const Index = () => {
       {/* Date Timeline */}
       <DateTimeline selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       
-      {/* Summary Box with Filters and Stats */}
-      <SummaryBox activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      {/* Subject Cards */}
-      <div className="pb-4">
-        {subjects.map((subject) => (
-          <SubjectCard
-            key={subject.id}
-            subject={subject}
-            onPlayPause={handlePlayPause}
-            onAddTopic={handleAddTopic}
-            onToggleTopic={handleToggleTopic}
-            onUpdateSubject={handleUpdateSubject}
-          />
-        ))}
+      {/* Conditional Rendering: Study Session or Subject List */}
+      {activeStudySubject ? (
+        <StudySession 
+          subject={activeStudySubject} 
+          onBack={handleEndStudySession}
+        />
+      ) : (
+        <>
+          {/* Summary Box with Filters and Stats */}
+          <SummaryBox activeTab={activeTab} onTabChange={setActiveTab} />
+          
+          {/* Subject Cards */}
+          <div className="pb-4">
+            {subjects.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                onPlayPause={handlePlayPause}
+                onAddTopic={handleAddTopic}
+                onToggleTopic={handleToggleTopic}
+                onUpdateSubject={handleUpdateSubject}
+              />
+            ))}
 
-        {/* Add New Subject Button */}
-        <div className="mx-6 mt-4">
-          <button
-            onClick={handleAddNewSubject}
-            className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
-          >
-            <span>Add New Subject</span>
-            <Crown className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+            {/* Add New Subject Button */}
+            <div className="mx-6 mt-4">
+              <button
+                onClick={handleAddNewSubject}
+                className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
+              >
+                <span>Add New Subject</span>
+                <Crown className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
       
       {/* Bottom Navigation */}
       <BottomNav />
