@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { 
   Palette, 
   ArrowUpDown, 
-  Widget, 
+  Grid3X3, 
   Shield, 
   Cloud, 
   Download, 
@@ -55,7 +54,7 @@ const Settings = () => {
   const settingsItems = [
     { icon: Palette, title: 'Theme', subtitle: theme, action: () => setShowThemeModal(true) },
     { icon: ArrowUpDown, title: 'Rearrange', subtitle: 'Customize layout', action: () => {} },
-    { icon: Widget, title: 'Widgets', subtitle: 'Configure widgets', action: () => {} },
+    { icon: Grid3X3, title: 'Widgets', subtitle: 'Configure widgets', action: () => {} },
     { icon: Shield, title: 'Authentication', subtitle: 'Sign in options', action: () => {} },
     { icon: Cloud, title: 'Cloud Backup', subtitle: 'Auto-sync data', action: handleBackup },
     { icon: Download, title: 'Export Data', subtitle: 'Download JSON', action: handleExport },
