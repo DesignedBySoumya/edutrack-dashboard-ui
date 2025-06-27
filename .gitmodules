@@ -1,0 +1,7 @@
+[submodule "src/components/edu-icons"]
+[submodule "beast-battle-forge"]
+  path = beast-battle-forge
+  url = https://github.com/DesignedBySoumya/beast-battle-forge.git
+[submodule "dark-spark-recall-hub"]
+  path = dark-spark-recall-hub
+  url = https://github.com/DesignedBySoumya/dark-spark-recall-hub.git
