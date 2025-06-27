@@ -55,7 +55,7 @@ const AttackWelcome = () => {
       title: "🧠 Mental Timer",
       subtitle: "God Mode Speed Training",
       description: "Practice with any source - books, videos, notes. Pure speed focus.",
-      route: "/attack/mental",
+      route: "mental",
       icon: Brain,
       color: "from-purple-600 to-blue-600",
       features: ["Topper benchmarks", "Live timing", "Zero friction"]
@@ -64,7 +64,7 @@ const AttackWelcome = () => {
       title: "⚔️ Full Battle",
       subtitle: "Complete MCQ Experience", 
       description: "Questions + confidence tracking + detailed reflection.",
-      route: "/attack/plan",
+      route: "plan",
       icon: Sword,
       color: "from-red-600 to-orange-600",
       features: ["Confidence tracking", "Explanations", "Beast arsenal"]
@@ -75,14 +75,14 @@ const AttackWelcome = () => {
     {
       title: "📊 Analytics",
       description: "AI-powered insights and performance tracking",
-      route: "/attack/analytics",
+      route: "analytics",
       icon: BarChart3,
       color: "bg-blue-900/50"
     },
     {
       title: "🔥 Streaks",
       description: "Daily consistency and streak tracking",
-      route: "/attack/streaks", 
+      route: "streaks", 
       icon: Calendar,
       color: "bg-green-900/50"
     }
@@ -189,7 +189,7 @@ const AttackWelcome = () => {
         </div>
 
         {/* Getting Started */}
-        {!stats && (
+        {/* {!stats && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-2xl text-white text-center">🎯 Ready for Battle?</CardTitle>
@@ -215,7 +215,7 @@ const AttackWelcome = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Pro Tips */}
         <Card className="bg-gray-800 border-gray-700 mt-8">

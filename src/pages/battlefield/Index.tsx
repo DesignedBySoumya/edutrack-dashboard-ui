@@ -127,7 +127,7 @@ const Index = () => {
             </div>
 
             <button
-              onClick={() => navigate('/battlefield/war')}
+              onClick={() => navigate('/battlefield/war/config')}
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black text-base lg:text-lg px-6 lg:px-8 py-3 lg:py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-2xl mt-6"
             >
               ENTER WAR MODE
