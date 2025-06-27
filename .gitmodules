@@ -5,3 +5,6 @@
 [submodule "dark-spark-recall-hub"]
   path = dark-spark-recall-hub
   url = https://github.com/DesignedBySoumya/dark-spark-recall-hub.git
+[submodule "defense-warlord-mindset"]
+  path = defense-warlord-mindset
+  url = https://github.com/DesignedBySoumya/defense-warlord-mindset.git
