@@ -130,14 +130,14 @@ const ReviewWeakChapters = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={() => navigate('/pts-report-card')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Report Card
-          </Button>
+          </Button> */}
           <div>
             <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
               <AlertTriangle className="w-8 h-8 text-orange-600" />
@@ -330,10 +330,10 @@ const ReviewWeakChapters = () => {
               <p className="text-gray-600">Focus on these weak areas in your next study session</p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => navigate('/compare-mocks')} variant="outline">
+              <Button onClick={() => navigate('/battlefield/war/report/compare')} variant="outline">
                 View Progress
               </Button>
-              <Button onClick={() => navigate('/pts-report-card')}>
+              <Button onClick={() => navigate('/battlefield/war/report/analysis')}>
                 Back to Report Card
               </Button>
             </div>

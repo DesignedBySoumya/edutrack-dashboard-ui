@@ -515,7 +515,7 @@ const PTSReportCard = () => {
         <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-purple-200 shadow-lg p-4 rounded-t-xl mt-8">
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
-              onClick={() => navigate('/battle-analysis', { state: { reportData: subjectData, studentInfo } })}
+              onClick={() => navigate('/battlefield/war/report/analysis', { state: { reportData: subjectData, studentInfo } })}
               className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3"
               size="lg"
             >
@@ -540,7 +540,7 @@ const PTSReportCard = () => {
               Download PDF
             </Button>
             <Button 
-              onClick={() => navigate('/compare-mocks')}
+              onClick={() => navigate('/battlefield/war/report/compare')}
               variant="outline"
               className="border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-3"
               size="lg"

@@ -55,7 +55,7 @@ const CompareMocks = () => {
         <div className="flex items-center gap-4 mb-6">
           <Button
             variant="outline"
-            onClick={() => navigate('/pts-report-card')}
+            onClick={() => navigate('/battlefield/war/report/pts')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />

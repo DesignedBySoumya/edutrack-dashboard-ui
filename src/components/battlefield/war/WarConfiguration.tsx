@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useBattleStore } from "../../stores/battleStore";
+import { useBattleStore } from "../../../stores/battleStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -11,36 +11,39 @@ interface WarConfigurationProps {
 interface FormData {
   studentId: string;
   dobPassword: string;
-  testType: 'full-length' | 'subject-wise' | '';
+  testType: "full-length" | "subject-wise" | "";
   duration: string;
 }
 
-const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
+const WarConfiguration = () => {
   const navigate = useNavigate();
   const { setConfig, startBattle } = useBattleStore();
-  
+
   const [formData, setFormData] = useState<FormData>({
-    studentId: '',
-    dobPassword: '',
-    testType: '',
-    duration: ''
+    studentId: "",
+    dobPassword: "",
+    testType: "",
+    duration: "",
   });
-  
+
+  const onNext = () => {
+    navigate("/battlefield/war");
+  };
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const getDurationOptions = () => {
-    if (formData.testType === 'full-length') {
+    if (formData.testType === "full-length") {
       return [
-        { value: '60', label: '60 Minutes' },
-        { value: '90', label: '90 Minutes' },
-        { value: '120', label: '2 Hours' },
-        { value: '180', label: '3 Hours' }
+        { value: "60", label: "60 Minutes" },
+        { value: "90", label: "90 Minutes" },
+        { value: "120", label: "2 Hours" },
+        { value: "180", label: "3 Hours" },
       ];
-    } else if (formData.testType === 'subject-wise') {
+    } else if (formData.testType === "subject-wise") {
       return [
-        { value: '25', label: '25 Minutes' },
-        { value: '30', label: '30 Minutes' },
-        { value: '35', label: '35 Minutes' }
+        { value: "25", label: "25 Minutes" },
+        { value: "30", label: "30 Minutes" },
+        { value: "35", label: "35 Minutes" },
       ];
     }
     return [];
@@ -48,48 +51,48 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!/^\d{8}$/.test(formData.studentId)) {
-      newErrors.studentId = 'Student ID must be exactly 8 digits';
+      newErrors.studentId = "Student ID must be exactly 8 digits";
     }
-    
+
     if (!/^\d{8}$/.test(formData.dobPassword)) {
-      newErrors.dobPassword = 'DOB must be in ddmmyyyy format (8 digits)';
+      newErrors.dobPassword = "DOB must be in ddmmyyyy format (8 digits)";
     }
-    
+
     if (!formData.testType) {
-      newErrors.testType = 'Please select a test type';
+      newErrors.testType = "Please select a test type";
     }
-    
+
     if (!formData.duration) {
-      newErrors.duration = 'Please select a duration';
+      newErrors.duration = "Please select a duration";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     const config = {
       studentId: formData.studentId,
       dobPassword: formData.dobPassword,
-      testType: formData.testType as 'full-length' | 'subject-wise',
-      duration: parseInt(formData.duration)
+      testType: formData.testType as "full-length" | "subject-wise",
+      duration: parseInt(formData.duration),
     };
-    
+
     setConfig(config);
     startBattle();
     onNext();
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -105,7 +108,7 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
               Configure your battle parameters before entering the arena
             </p>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Student ID */}
@@ -116,13 +119,17 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
                 <input
                   type="text"
                   value={formData.studentId}
-                  onChange={(e) => handleInputChange('studentId', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("studentId", e.target.value)
+                  }
                   className="w-full bg-slate-700/50 border border-slate-500 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:border-orange-400 focus:outline-none transition-colors"
                   placeholder="12345678"
                   maxLength={8}
                 />
                 {errors.studentId && (
-                  <p className="text-red-400 text-sm mt-1">{errors.studentId}</p>
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.studentId}
+                  </p>
                 )}
               </div>
 
@@ -134,13 +141,17 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
                 <input
                   type="password"
                   value={formData.dobPassword}
-                  onChange={(e) => handleInputChange('dobPassword', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("dobPassword", e.target.value)
+                  }
                   className="w-full bg-slate-700/50 border border-slate-500 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:border-orange-400 focus:outline-none transition-colors"
                   placeholder="01011995"
                   maxLength={8}
                 />
                 {errors.dobPassword && (
-                  <p className="text-red-400 text-sm mt-1">{errors.dobPassword}</p>
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.dobPassword}
+                  </p>
                 )}
               </div>
 
@@ -152,30 +163,36 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     type="button"
-                    onClick={() => handleInputChange('testType', 'full-length')}
+                    onClick={() => handleInputChange("testType", "full-length")}
                     className={`p-4 rounded-xl border-2 transition-all ${
-                      formData.testType === 'full-length'
-                        ? 'border-orange-400 bg-orange-400/20 text-orange-200'
-                        : 'border-slate-500 bg-slate-700/30 text-slate-300 hover:border-slate-400'
+                      formData.testType === "full-length"
+                        ? "border-orange-400 bg-orange-400/20 text-orange-200"
+                        : "border-slate-500 bg-slate-700/30 text-slate-300 hover:border-slate-400"
                     }`}
                   >
                     <div className="text-2xl mb-2">📋</div>
                     <div className="font-semibold">Full Length</div>
-                    <div className="text-sm opacity-80">Complete exam simulation</div>
+                    <div className="text-sm opacity-80">
+                      Complete exam simulation
+                    </div>
                   </button>
-                  
+
                   <button
                     type="button"
-                    onClick={() => handleInputChange('testType', 'subject-wise')}
+                    onClick={() =>
+                      handleInputChange("testType", "subject-wise")
+                    }
                     className={`p-4 rounded-xl border-2 transition-all ${
-                      formData.testType === 'subject-wise'
-                        ? 'border-orange-400 bg-orange-400/20 text-orange-200'
-                        : 'border-slate-500 bg-slate-700/30 text-slate-300 hover:border-slate-400'
+                      formData.testType === "subject-wise"
+                        ? "border-orange-400 bg-orange-400/20 text-orange-200"
+                        : "border-slate-500 bg-slate-700/30 text-slate-300 hover:border-slate-400"
                     }`}
                   >
                     <div className="text-2xl mb-2">📚</div>
                     <div className="font-semibold">Subject Wise</div>
-                    <div className="text-sm opacity-80">Focused topic practice</div>
+                    <div className="text-sm opacity-80">
+                      Focused topic practice
+                    </div>
                   </button>
                 </div>
                 {errors.testType && (
@@ -191,18 +208,22 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
                   </label>
                   <select
                     value={formData.duration}
-                    onChange={(e) => handleInputChange('duration', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("duration", e.target.value)
+                    }
                     className="w-full bg-slate-700/50 border border-slate-500 rounded-xl px-4 py-3 text-white focus:border-orange-400 focus:outline-none transition-colors"
                   >
                     <option value="">Select duration...</option>
-                    {getDurationOptions().map(option => (
+                    {getDurationOptions().map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
                     ))}
                   </select>
                   {errors.duration && (
-                    <p className="text-red-400 text-sm mt-1">{errors.duration}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.duration}
+                    </p>
                   )}
                 </div>
               )}
@@ -211,12 +232,12 @@ const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate("/")}
                   className="flex-1 bg-slate-700/50 border-slate-500 text-slate-200 hover:bg-slate-600/50"
                 >
                   ← Back to Home
                 </Button>
-                
+
                 <Button
                   type="submit"
                   className="flex-1 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-black text-lg py-6"
