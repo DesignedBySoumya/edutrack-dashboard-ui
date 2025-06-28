@@ -5,7 +5,6 @@ import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
 import { StudySession } from '@/components/StudySession';
-import { AuthDialog } from '@/components/auth/AuthDialog';
 import { Crown } from 'lucide-react';
 
 interface Topic {
