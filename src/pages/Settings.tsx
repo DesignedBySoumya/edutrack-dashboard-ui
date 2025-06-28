@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { 
@@ -15,12 +18,19 @@ import {
   TrendingUp, 
   Target, 
   Moon,
-  ChevronRight 
+  ChevronRight,
+  LogOut,
+  User,
+  Lock
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, loading, signOut } = useAuth();
+  const { handleSignOut } = useAuthRedirect();
+  const { toast } = useToast();
   const [theme, setTheme] = useState('system');
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [widgets, setWidgets] = useState({
@@ -36,7 +46,17 @@ const Settings = () => {
   };
 
   const handleBackup = () => {
-    alert('Backed up successfully');
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to use cloud backup features.",
+      });
+      return;
+    }
+    toast({
+      title: "Backup successful",
+      description: "Your data has been backed up to the cloud.",
+    });
   };
 
   const handleExport = () => {
@@ -51,22 +71,126 @@ const Settings = () => {
     a.href = url;
     a.download = 'upsc-study-data.json';
     a.click();
+    toast({
+      title: "Export successful",
+      description: "Your data has been exported successfully.",
+    });
+  };
+
+  const handleAuthenticationClick = () => {
+    if (isAuthenticated) {
+      // Show a toast message instead of popup alert
+      toast({
+        title: "Already signed in",
+        description: `You are already signed in as ${user?.email}`,
+      });
+    } else {
+      // Simply navigate to login page without any popup
+      navigate('/login');
+    }
+  };
+
+  const handleSignOutClick = () => {
+    handleSignOut(signOut);
   };
 
   const settingsItems = [
-    { icon: Palette, title: 'Theme', subtitle: theme, action: () => setShowThemeModal(true) },
-    { icon: ArrowUpDown, title: 'Rearrange', subtitle: 'Customize layout', action: () => {} },
-    { icon: Grid3X3, title: 'Widgets', subtitle: 'Configure widgets', action: () => {} },
-    { icon: Shield, title: 'Authentication', subtitle: 'Sign in options', action: () => navigate('/login') },
-    { icon: Cloud, title: 'Cloud Backup', subtitle: 'Auto-sync data', action: handleBackup },
-    { icon: Download, title: 'Export Data', subtitle: 'Download JSON', action: handleExport },
-    { icon: Upload, title: 'Import Data', subtitle: 'Upload backup', action: () => {} },
-    { icon: RotateCcw, title: 'Reset App', subtitle: 'Clear all data', action: () => {} },
-    { icon: Users, title: 'Switch Subject', subtitle: 'UPSC / GATE / SSC', action: () => {} },
-    { icon: TrendingUp, title: 'Progress Report', subtitle: 'Weekly stats', action: () => {} },
-    { icon: Target, title: 'Set Target Score', subtitle: 'Goal: 500/500', action: () => {} },
-    { icon: Moon, title: 'Focus Mode', subtitle: 'Mute notifications', action: () => {} },
+    { 
+      icon: Palette, 
+      title: 'Theme', 
+      subtitle: theme, 
+      action: () => setShowThemeModal(true),
+      requiresAuth: false
+    },
+    { 
+      icon: ArrowUpDown, 
+      title: 'Rearrange', 
+      subtitle: 'Customize layout', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: Grid3X3, 
+      title: 'Widgets', 
+      subtitle: 'Configure widgets', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: Shield, 
+      title: isAuthenticated ? 'Account' : 'Authentication', 
+      subtitle: isAuthenticated ? `Signed in as ${user?.email}` : 'Sign in required', 
+      action: handleAuthenticationClick,
+      requiresAuth: false
+    },
+    { 
+      icon: Cloud, 
+      title: 'Cloud Backup', 
+      subtitle: 'Auto-sync data', 
+      action: handleBackup,
+      requiresAuth: true
+    },
+    { 
+      icon: Download, 
+      title: 'Export Data', 
+      subtitle: 'Download JSON', 
+      action: handleExport,
+      requiresAuth: false
+    },
+    { 
+      icon: Upload, 
+      title: 'Import Data', 
+      subtitle: 'Upload backup', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: RotateCcw, 
+      title: 'Reset App', 
+      subtitle: 'Clear all data', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: Users, 
+      title: 'Switch Subject', 
+      subtitle: 'UPSC / GATE / SSC', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: TrendingUp, 
+      title: 'Progress Report', 
+      subtitle: 'Weekly stats', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: Target, 
+      title: 'Set Target Score', 
+      subtitle: 'Goal: 500/500', 
+      action: () => {},
+      requiresAuth: false
+    },
+    { 
+      icon: Moon, 
+      title: 'Focus Mode', 
+      subtitle: 'Mute notifications', 
+      action: () => {},
+      requiresAuth: false
+    },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0f0f12] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f12] text-white pb-20">
@@ -79,23 +203,44 @@ const Settings = () => {
         </div>
 
         <div className="space-y-3">
-          {settingsItems.map((item, index) => (
-            <div
-              key={index}
-              onClick={item.action}
-              className="bg-[#1E1E1E] rounded-xl shadow-sm px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-[#2a2a2a] transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <item.icon className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="font-medium text-white">{item.title}</p>
-                  <p className="text-xs text-gray-400">{item.subtitle}</p>
+          {settingsItems.map((item, index) => {
+            // Skip auth-required items if not authenticated
+            if (item.requiresAuth && !isAuthenticated) {
+              return null;
+            }
+
+            return (
+              <div
+                key={index}
+                onClick={item.action}
+                className="bg-[#1E1E1E] rounded-xl shadow-sm px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-[#2a2a2a] transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <item.icon className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="font-medium text-white">{item.title}</p>
+                    <p className="text-xs text-gray-400">{item.subtitle}</p>
+                  </div>
                 </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Sign Out Button for authenticated users */}
+        {isAuthenticated && (
+          <div className="mt-6">
+            <Button 
+              variant="destructive" 
+              className="w-full"
+              onClick={handleSignOutClick}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        )}
 
         {/* Widgets Section */}
         <div className="mt-6">

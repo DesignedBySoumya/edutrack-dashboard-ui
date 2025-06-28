@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 
 interface FormData {
   email: string;
@@ -29,7 +31,10 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, signInWithGoogle } = useAuth();
+  const { handleLoginSuccess } = useAuthRedirect({ redirectIfAuthenticated: true });
+  const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -85,8 +90,10 @@ export function LoginForm({
       if (error) {
         setErrors({ general: error.message });
       } else {
-        // Success - redirect to index page
-        navigate('/');
+        // Set login success flag before redirect
+        localStorage.setItem('loginSuccess', 'true');
+        // Success - redirect to intended destination or index page
+        handleLoginSuccess();
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -105,13 +112,20 @@ export function LoginForm({
     setIsGoogleLoading(true);
     console.log('Starting Google login...');
     try {
-      const { error } = await signInWithGoogle();
+      const from = location.state?.from?.pathname || '/';
+      const { error } = await signInWithGoogle(from);
       console.log('Google login result:', { error });
       if (error) {
         console.error('Google login error:', error);
         setErrors({ general: error.message });
       } else {
         console.log('Google login successful, redirecting...');
+        // Set login success flag for Google OAuth as well
+        localStorage.setItem('loginSuccess', 'true');
+        toast({
+          title: "Login successful!",
+          description: "Welcome back to your study dashboard.",
+        });
       }
       // Google OAuth will handle the redirect automatically
     } catch (error) {

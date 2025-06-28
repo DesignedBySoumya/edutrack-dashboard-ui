@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 
 interface FormData {
   name: string;
@@ -32,6 +34,8 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
   const { signUp } = useAuth();
+  const { handleLoginSuccess } = useAuthRedirect({ redirectIfAuthenticated: true });
+  const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -91,7 +95,11 @@ export function SignupForm({
       if (error) {
         setErrors({ general: error.message });
       } else {
-        // Success - redirect to login page
+        // Success - show success message and redirect to login
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account, then sign in.",
+        });
         navigate('/login');
       }
     } catch (error) {

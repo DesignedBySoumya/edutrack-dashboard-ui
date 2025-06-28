@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { DateTimeline } from '@/components/DateTimeline';
 import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
 import { StudySession } from '@/components/StudySession';
+import { useToast } from '@/hooks/use-toast';
 import { Crown } from 'lucide-react';
 
 interface Topic {
@@ -32,6 +33,7 @@ interface Subject {
 }
 
 const Index = () => {
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState('2');
   const [activeTab, setActiveTab] = useState('all');
   const [activeStudySubject, setActiveStudySubject] = useState<Subject | null>(null);
@@ -117,6 +119,20 @@ const Index = () => {
       ]
     }
   ]);
+
+  // Check for login success and show popup
+  useEffect(() => {
+    const loginSuccess = localStorage.getItem('loginSuccess');
+    if (loginSuccess) {
+      // Show success popup
+      toast({
+        title: "Welcome back!",
+        description: "Thank you for signing in. You're all set to continue your studies.",
+      });
+      // Clear the flag
+      localStorage.removeItem('loginSuccess');
+    }
+  }, [toast]);
 
   const handlePlayPause = (subjectId: number) => {
     const subject = subjects.find(s => s.id === subjectId);
