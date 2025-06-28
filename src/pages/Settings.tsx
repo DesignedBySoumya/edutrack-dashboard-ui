@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
@@ -135,36 +134,36 @@ const Settings = () => {
             Install Now
           </button>
         </div>
-      </div>
 
-      {/* Theme Modal */}
-      {showThemeModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1f] rounded-xl border border-slate-800 w-full max-w-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Choose Theme</h3>
-              <div className="space-y-3">
-                {['system', 'light', 'dark'].map((themeOption) => (
-                  <button
-                    key={themeOption}
-                    onClick={() => handleThemeChange(themeOption)}
-                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-colors"
-                  >
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      theme === themeOption ? 'bg-blue-500 border-blue-500' : 'border-gray-400'
-                    }`}>
-                      {theme === themeOption && <div className="w-2 h-2 bg-white rounded-full m-0.5" />}
-                    </div>
-                    <span className="text-white capitalize">{themeOption}</span>
-                  </button>
-                ))}
+        {/* Theme Modal - keep existing theme modal code */}
+        {showThemeModal && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1a1a1f] rounded-xl border border-slate-800 w-full max-w-sm">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Choose Theme</h3>
+                <div className="space-y-3">
+                  {['system', 'light', 'dark'].map((themeOption) => (
+                    <button
+                      key={themeOption}
+                      onClick={() => handleThemeChange(themeOption)}
+                      className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-800 transition-colors"
+                    >
+                      <div className={`w-4 h-4 rounded-full border-2 ${
+                        theme === themeOption ? 'bg-blue-500 border-blue-500' : 'border-gray-400'
+                      }`}>
+                        {theme === themeOption && <div className="w-2 h-2 bg-white rounded-full m-0.5" />}
+                      </div>
+                      <span className="text-white capitalize">{themeOption}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Auth Dialog */}
+      {/* Auth Dialog - opens instantly when triggered from settings */}
       <AuthDialog 
         openFromSettings={showAuthModal} 
         onOpenChange={setShowAuthModal}

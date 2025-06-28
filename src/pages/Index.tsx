@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { DateTimeline } from '@/components/DateTimeline';
@@ -240,9 +239,6 @@ const Index = () => {
       
       {/* Bottom Navigation */}
       <BottomNav />
-      
-      {/* Auth Dialog - appears after 20s */}
-      <AuthDialog />
     </div>
   );
 };
