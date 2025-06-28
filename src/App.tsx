@@ -4,11 +4,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Timetable from "./pages/Timetable";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 
 const queryClient = new QueryClient();
 
@@ -35,110 +39,148 @@ const BattleAnalysis = lazy(() => import("./pages/battlefield/BattleAnalysis"));
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/timetable" element={<Timetable />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route
-              path="/flashcards"
-              element={
-                <Suspense fallback={<div>Loading Flashcards...</div>}>
-                  <Flashcards />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <BattlefieldHome />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/defence"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <DefenceMode />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/attack/*"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <Attack />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <BeginBattle  />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war/config"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <WarConfiguration
-                    
-                  />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war/report"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <WarReportIndex />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war/report/pts"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <PTSReportCard />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war/report/weak-chapters"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <ReviewWeakChapters />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war/report/compare"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <CompareMocks />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/battlefield/war/report/analysis"
-              element={
-                <Suspense fallback={<div>Loading...</div>}>
-                  <BattleAnalysis />
-                </Suspense>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/timetable" element={
+                <ProtectedRoute>
+                  <Timetable />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route
+                path="/flashcards"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading Flashcards...</div>}>
+                      <Flashcards />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <BattlefieldHome />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/defence"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <DefenceMode />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/attack/*"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Attack />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <BeginBattle  />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war/config"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <WarConfiguration
+                        
+                      />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war/report"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <WarReportIndex />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war/report/pts"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <PTSReportCard />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war/report/weak-chapters"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <ReviewWeakChapters />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war/report/compare"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <CompareMocks />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/war/report/analysis"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <BattleAnalysis />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

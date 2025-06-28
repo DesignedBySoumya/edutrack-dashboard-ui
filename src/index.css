@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,9 +33,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Hide blinking cursor globally */
+    caret-color: transparent;
   }
   html {
     @apply scroll-smooth;
+  }
+  
+  /* Show cursor only for actual input fields */
+  input, textarea, [contenteditable="true"] {
+    caret-color: auto;
+  }
+  
+  /* Prevent text selection on non-interactive elements */
+  body, div, span, p, h1, h2, h3, h4, h5, h6 {
+    user-select: none;
+  }
+  
+  /* Allow text selection for input fields and content areas */
+  input, textarea, [contenteditable="true"], .selectable {
+    user-select: text;
   }
 }
 
