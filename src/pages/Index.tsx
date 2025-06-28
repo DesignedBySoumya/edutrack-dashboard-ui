@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { DateTimeline } from '@/components/DateTimeline';
@@ -5,6 +6,7 @@ import { SubjectCard } from '@/components/SubjectCard';
 import { BottomNav } from '@/components/BottomNav';
 import { SummaryBox } from '@/components/SummaryBox';
 import { StudySession } from '@/components/StudySession';
+import { AuthDialog } from '@/components/auth/AuthDialog';
 import { Crown } from 'lucide-react';
 
 interface Topic {
@@ -238,6 +240,9 @@ const Index = () => {
       
       {/* Bottom Navigation */}
       <BottomNav />
+      
+      {/* Auth Dialog - appears after 20s */}
+      <AuthDialog />
     </div>
   );
 };

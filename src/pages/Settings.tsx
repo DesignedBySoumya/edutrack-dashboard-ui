@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
+import { AuthDialog } from '@/components/auth/AuthDialog';
 import { 
   Palette, 
   ArrowUpDown, 
@@ -21,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 const Settings = () => {
   const [theme, setTheme] = useState('system');
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [widgets, setWidgets] = useState({
     calendar: true,
     stats: true,
@@ -55,7 +58,7 @@ const Settings = () => {
     { icon: Palette, title: 'Theme', subtitle: theme, action: () => setShowThemeModal(true) },
     { icon: ArrowUpDown, title: 'Rearrange', subtitle: 'Customize layout', action: () => {} },
     { icon: Grid3X3, title: 'Widgets', subtitle: 'Configure widgets', action: () => {} },
-    { icon: Shield, title: 'Authentication', subtitle: 'Sign in options', action: () => {} },
+    { icon: Shield, title: 'Authentication', subtitle: 'Sign in options', action: () => setShowAuthModal(true) },
     { icon: Cloud, title: 'Cloud Backup', subtitle: 'Auto-sync data', action: handleBackup },
     { icon: Download, title: 'Export Data', subtitle: 'Download JSON', action: handleExport },
     { icon: Upload, title: 'Import Data', subtitle: 'Upload backup', action: () => {} },
@@ -160,6 +163,12 @@ const Settings = () => {
           </div>
         </div>
       )}
+
+      {/* Auth Dialog */}
+      <AuthDialog 
+        openFromSettings={showAuthModal} 
+        onOpenChange={setShowAuthModal}
+      />
 
       <BottomNav />
     </div>
