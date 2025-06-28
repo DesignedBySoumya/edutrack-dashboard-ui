@@ -113,17 +113,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async (redirectTo?: string) => {
     try {
-      const finalRedirectTo = redirectTo ? `${window.location.origin}${redirectTo}` : `${window.location.origin}/`;
+      // Always redirect to auth callback for proper handling
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       
       // Set login success flag if redirecting to index page
-      if (finalRedirectTo === `${window.location.origin}/` || finalRedirectTo === `${window.location.origin}/index`) {
+      if (redirectTo === '/' || redirectTo === '/index') {
         localStorage.setItem('loginSuccess', 'true');
       }
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: finalRedirectTo,
+          redirectTo: callbackUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
