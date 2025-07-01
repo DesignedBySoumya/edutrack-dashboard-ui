@@ -1,178 +1,218 @@
+import { useEffect, useState } from "react";
+import { useBattleStore } from "../../../stores/battleStore";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Target, CheckCircle, XCircle } from 'lucide-react';
-import { useBattleStore } from '../../../stores/battleStore';
-import { useCreateBattleSession } from '@/hooks/useBattleSessions';
+// interface BeginBattleProps {
+//   onEnd?: () => void;
+// }
 
-interface BeginBattleProps {
-  onEnd: () => void;
-}
-
-const BeginBattle = ({ onEnd }: BeginBattleProps) => {
-  const { currentSession, setPhase } = useBattleStore();
-  const createBattleSession = useCreateBattleSession();
-  
-  const [timeRemaining, setTimeRemaining] = useState((currentSession?.timeLimit || 60) * 60);
-  const [currentQuestion, setCurrentQuestion] = useState(1);
-  const [totalQuestions] = useState(currentSession?.questionCount || 50);
-  const [score, setScore] = useState(0);
-  const [answered, setAnswered] = useState(0);
-  const [battleResults, setBattleResults] = useState<any>({});
-
-  // Mock question data
-  const mockQuestion = {
-    id: 1,
-    text: "Which article of the Indian Constitution deals with the Right to Education?",
-    options: [
-      "Article 21A",
-      "Article 19", 
-      "Article 14",
-      "Article 32"
-    ],
-    correct: 0
+const BeginBattle = () => {
+  const navigate = useNavigate();
+  const {
+    timeLeft,
+    totalDuration,
+    isActive,
+    isPaused,
+    updateTimeLeft,
+    endBattle,
+    config,
+  } = useBattleStore();
+  const [motivationalMessage, setMotivationalMessage] = useState(
+    "Stay focused, warrior"
+  );
+  const onEnd = () => {
+    navigate("/battlefield/war/report/pts");
   };
+  const motivationalMessages = [
+    "Stay focused, warrior",
+    "Every second counts",
+    "Victory requires discipline",
+    "Push through the resistance",
+    "Champions are made in moments like this",
+    "Your future self is watching",
+    "Excellence is a habit, not an act",
+    "The pain of discipline weighs ounces, regret weighs tons",
+  ];
 
+  // Timer logic
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          handleBattleEnd();
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (!isActive || isPaused) return;
+
+    const interval = setInterval(() => {
+      updateTimeLeft(Math.max(0, timeLeft - 1));
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
+  }, [isActive, isPaused, timeLeft, updateTimeLeft]);
+
+  // Auto-end when timer reaches 0
+  useEffect(() => {
+    if (timeLeft <= 0 && isActive) {
+      endBattle();
+      onEnd();
+    }
+  }, [timeLeft, isActive, endBattle, onEnd]);
+
+  // Motivational message rotation
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      const randomMessage =
+        motivationalMessages[
+          Math.floor(Math.random() * motivationalMessages.length)
+        ];
+      setMotivationalMessage(randomMessage);
+    }, 60000); // Change every minute
+
+    return () => clearInterval(messageInterval);
   }, []);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+    return `${minutes.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
-  const handleAnswer = (optionIndex: number) => {
-    const isCorrect = optionIndex === mockQuestion.correct;
-    if (isCorrect) {
-      setScore(prev => prev + 1);
-    }
-    setAnswered(prev => prev + 1);
-
-    // Move to next question or end battle
-    if (currentQuestion >= totalQuestions) {
-      setTimeout(handleBattleEnd, 1000);
-    } else {
-      setCurrentQuestion(prev => prev + 1);
-    }
+  const getTimerColor = () => {
+    if (timeLeft > 900) return "text-slate-300"; // > 15 min
+    if (timeLeft > 300) return "text-yellow-400"; // > 5 min
+    return "text-red-400"; // < 5 min (urgent)
   };
 
-  const handleBattleEnd = async () => {
-    const timeSpent = ((currentSession?.timeLimit || 60) * 60) - timeRemaining;
-    const incorrect = answered - score;
-    
-    // Create mock subjects data
-    const subjectsData = {
-      'Indian Polity': { correct: Math.floor(score * 0.4), incorrect: Math.floor(incorrect * 0.3), marks: Math.floor(score * 0.4) * 2, maxMarks: 20 },
-      'Geography': { correct: Math.floor(score * 0.3), incorrect: Math.floor(incorrect * 0.3), marks: Math.floor(score * 0.3) * 2, maxMarks: 20 },
-      'Economy': { correct: Math.floor(score * 0.2), incorrect: Math.floor(incorrect * 0.2), marks: Math.floor(score * 0.2) * 2, maxMarks: 20 },
-      'History': { correct: Math.floor(score * 0.1), incorrect: Math.floor(incorrect * 0.2), marks: Math.floor(score * 0.1) * 2, maxMarks: 20 },
-    };
-
-    const battleSessionData = {
-      session_type: 'war' as const,
-      start_time: currentSession?.startTime || new Date().toISOString(),
-      end_time: new Date().toISOString(),
-      total_questions: totalQuestions,
-      correct_answers: score,
-      incorrect_answers: incorrect,
-      total_marks: score * 2,
-      time_spent: timeSpent,
-      subjects_data: subjectsData,
-    };
-
-    try {
-      await createBattleSession.mutateAsync(battleSessionData);
-      setBattleResults(battleSessionData);
-      setPhase('completed');
-      onEnd();
-    } catch (error) {
-      console.error('Failed to save battle session:', error);
-      // Still proceed to end battle even if save fails
-      setPhase('completed');
-      onEnd();
-    }
+  const getProgressPercentage = () => {
+    return Math.max(0, ((totalDuration - timeLeft) / totalDuration) * 100);
   };
+
+  const handleEndBattle = () => {
+    endBattle();
+    onEnd();
+  };
+
+  if (!config) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-bold mb-4">
+            No battle configuration found
+          </h2>
+          <p className="text-slate-300">Please configure your battle first.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-black p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-slate-800/50 border-orange-500/20">
-            <CardContent className="p-4 text-center">
-              <Clock className="w-6 h-6 text-orange-400 mx-auto mb-2" />
-              <div className="text-xl font-bold text-orange-400">{formatTime(timeRemaining)}</div>
-              <div className="text-sm text-gray-400">Time Left</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800/50 border-orange-500/20">
-            <CardContent className="p-4 text-center">
-              <Target className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-              <div className="text-xl font-bold text-blue-400">{currentQuestion}/{totalQuestions}</div>
-              <div className="text-sm text-gray-400">Question</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800/50 border-orange-500/20">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
-              <div className="text-xl font-bold text-green-400">{score}</div>
-              <div className="text-sm text-gray-400">Correct</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800/50 border-orange-500/20">
-            <CardContent className="p-4 text-center">
-              <XCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
-              <div className="text-xl font-bold text-red-400">{answered - score}</div>
-              <div className="text-sm text-gray-400">Incorrect</div>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* War-themed background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-950/80 via-slate-900/90 to-slate-950/80"></div>
+
+      <div className="relative z-10 text-center max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center text-slate-300 mb-4">
+            <div className="text-lg font-semibold">
+              TARGET: {config.duration}MIN
+            </div>
+            <div className="flex items-center text-orange-400">
+              <div className="w-3 h-3 bg-orange-400 rounded-full mr-2 animate-pulse"></div>
+              BATTLE MODE ACTIVE
+            </div>
+          </div>
         </div>
 
-        {/* Question Card */}
-        <Card className="bg-slate-800/50 border-orange-500/20 mb-6">
-          <CardContent className="p-6">
-            <h2 className="text-xl font-bold text-orange-400 mb-4">Question {currentQuestion}</h2>
-            <p className="text-lg text-gray-200 mb-6">{mockQuestion.text}</p>
-            
-            <div className="space-y-3">
-              {mockQuestion.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswer(index)}
-                  className="w-full p-4 text-left bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 hover:border-orange-500/50 rounded-lg transition-all text-gray-200 hover:text-white"
-                >
-                  <span className="font-semibold text-orange-400 mr-3">
-                    {String.fromCharCode(65 + index)}.
-                  </span>
-                  {option}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Motivational Message */}
+        <div className="mb-8">
+          <p className="text-xl text-slate-200 font-medium animate-fade-in">
+            "{motivationalMessage}"
+          </p>
+        </div>
 
-        {/* Emergency End Button */}
-        <div className="text-center">
-          <Button
-            onClick={handleBattleEnd}
-            variant="outline"
-            className="border-red-500 text-red-400 hover:bg-red-500/20"
+        {/* Main Timer */}
+        <div className="mb-12">
+          <div
+            className={`text-8xl font-black font-mono mb-4 ${getTimerColor()} ${
+              timeLeft < 300 ? "animate-pulse" : ""
+            }`}
           >
-            End Battle Early
+            {formatTime(timeLeft)}
+          </div>
+          <div className="text-2xl text-slate-300 font-semibold mb-6">
+            {config.testType === "full-length"
+              ? "FULL BATTLE"
+              : "SUBJECT BATTLE"}
+          </div>
+
+          {/* Progress Bar */}
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="flex justify-between text-sm text-slate-400 mb-2">
+              <span>BATTLE COMMENCED</span>
+              <span>{Math.round(getProgressPercentage())}% COMPLETE</span>
+              <span>VICTORY</span>
+            </div>
+            <div className="w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-1000 ease-out"
+                style={{ width: `${getProgressPercentage()}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-slate-500 mt-2">
+              <span>●</span>
+              <span className="text-orange-400">
+                {`█`.repeat(Math.floor(getProgressPercentage() / 10))}
+              </span>
+              <span>●</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Emergency Controls */}
+        <div className="space-y-4">
+          <Button
+            onClick={handleEndBattle}
+            variant="destructive"
+            className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-black text-xl py-6 px-12 rounded-xl transform hover:scale-105 transition-all"
+          >
+            ⚡ END BATTLE
           </Button>
+
+          {timeLeft < 60 && (
+            <div className="text-red-400 font-semibold animate-pulse">
+              ⚠️ Final moments - stay strong!
+            </div>
+          )}
+        </div>
+
+        {/* Battle Info */}
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="bg-slate-800/30 rounded-lg p-3">
+            <div className="text-slate-400 text-sm">Type</div>
+            <div className="text-white font-semibold">{config.testType}</div>
+          </div>
+          <div className="bg-slate-800/30 rounded-lg p-3">
+            <div className="text-slate-400 text-sm">Duration</div>
+            <div className="text-white font-semibold">{config.duration}m</div>
+          </div>
+          <div className="bg-slate-800/30 rounded-lg p-3">
+            <div className="text-slate-400 text-sm">Elapsed</div>
+            <div className="text-white font-semibold">
+              {formatTime(totalDuration - timeLeft)}
+            </div>
+          </div>
+          <div className="bg-slate-800/30 rounded-lg p-3">
+            <div className="text-slate-400 text-sm">Remaining</div>
+            <div className="text-white font-semibold">
+              {formatTime(timeLeft)}
+            </div>
+          </div>
         </div>
       </div>
     </div>

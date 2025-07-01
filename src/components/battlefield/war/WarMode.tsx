@@ -1,9 +1,9 @@
 import { useState } from "react";
-import WarConfiguration from "./WarConfiguration";
-import BeginBattle from "./BeginBattle";
-import ReportCard from "./ReportCard";
-import WarReport from "./WarReport";
-import { useBattleStore } from "../../../stores/battleStore";
+import WarConfiguration from "./war/WarConfiguration";
+import BeginBattle from "./war/BeginBattle";
+import ReportCard from "./war/ReportCard";
+import WarReport from "./war/WarReport";
+import { useBattleStore } from "../../stores/battleStore";
 
 export type WarStep = 'config' | 'battle' | 'report-card' | 'dashboard';
 

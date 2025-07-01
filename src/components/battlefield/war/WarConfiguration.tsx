@@ -1,151 +1,253 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Target, BookOpen } from 'lucide-react';
-import { useSubjects } from '@/hooks/useSubjects';
-import { useBattleStore } from '../../../stores/battleStore';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useBattleStore } from "../../../stores/battleStore";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface WarConfigurationProps {
   onNext: () => void;
 }
 
-const WarConfiguration = ({ onNext }: WarConfigurationProps) => {
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [timeLimit, setTimeLimit] = useState(60);
-  const [questionCount, setQuestionCount] = useState(50);
-  
-  const { data: subjects, isLoading } = useSubjects();
-  const { setCurrentSession } = useBattleStore();
+interface FormData {
+  studentId: string;
+  dobPassword: string;
+  testType: "full-length" | "subject-wise" | "";
+  duration: string;
+}
 
-  const handleSubjectToggle = (subjectId: string) => {
-    setSelectedSubjects(prev => 
-      prev.includes(subjectId) 
-        ? prev.filter(id => id !== subjectId)
-        : [...prev, subjectId]
-    );
+const WarConfiguration = () => {
+  const navigate = useNavigate();
+  const { setConfig, startBattle } = useBattleStore();
+
+  const [formData, setFormData] = useState<FormData>({
+    studentId: "",
+    dobPassword: "",
+    testType: "",
+    duration: "",
+  });
+
+  const onNext = () => {
+    navigate("/battlefield/war");
+  };
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const getDurationOptions = () => {
+    if (formData.testType === "full-length") {
+      return [
+        { value: "60", label: "60 Minutes" },
+        { value: "90", label: "90 Minutes" },
+        { value: "120", label: "2 Hours" },
+        { value: "180", label: "3 Hours" },
+      ];
+    } else if (formData.testType === "subject-wise") {
+      return [
+        { value: "25", label: "25 Minutes" },
+        { value: "30", label: "30 Minutes" },
+        { value: "35", label: "35 Minutes" },
+      ];
+    }
+    return [];
   };
 
-  const handleStartBattle = () => {
-    // Create a new battle session configuration
-    const battleConfig = {
-      selectedSubjects,
-      timeLimit,
-      questionCount,
-      startTime: new Date().toISOString(),
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!/^\d{8}$/.test(formData.studentId)) {
+      newErrors.studentId = "Student ID must be exactly 8 digits";
+    }
+
+    if (!/^\d{8}$/.test(formData.dobPassword)) {
+      newErrors.dobPassword = "DOB must be in ddmmyyyy format (8 digits)";
+    }
+
+    if (!formData.testType) {
+      newErrors.testType = "Please select a test type";
+    }
+
+    if (!formData.duration) {
+      newErrors.duration = "Please select a duration";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    const config = {
+      studentId: formData.studentId,
+      dobPassword: formData.dobPassword,
+      testType: formData.testType as "full-length" | "subject-wise",
+      duration: parseInt(formData.duration),
     };
-    
-    setCurrentSession(battleConfig);
+
+    setConfig(config);
+    startBattle();
     onNext();
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-black p-6 flex items-center justify-center">
-        <div className="text-orange-400 text-xl">Loading subjects...</div>
-      </div>
-    );
-  }
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-black">
-      {/* War-themed background texture */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-900/20 to-slate-900/20"></div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-2xl mx-auto w-full">
+        <Card className="bg-slate-800/40 backdrop-blur-sm border border-slate-600 rounded-3xl shadow-2xl">
+          <CardHeader className="text-center pb-6">
+            <CardTitle className="text-5xl font-black text-white mb-4">
+              🏹 WAR PREPARATION
+            </CardTitle>
+            <p className="text-xl text-slate-300">
+              Configure your battle parameters before entering the arena
+            </p>
+          </CardHeader>
 
-      <div className="relative z-10 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-orange-400 mb-2">⚔️ War Configuration</h1>
-            <p className="text-gray-300">Prepare for battle! Configure your war parameters.</p>
-          </div>
+          <CardContent className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Student ID */}
+              <div>
+                <label className="block text-slate-200 font-semibold mb-2">
+                  🎯 Student ID (8 digits)
+                </label>
+                <input
+                  type="text"
+                  value={formData.studentId}
+                  onChange={(e) =>
+                    handleInputChange("studentId", e.target.value)
+                  }
+                  className="w-full bg-slate-700/50 border border-slate-500 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:border-orange-400 focus:outline-none transition-colors"
+                  placeholder="12345678"
+                  maxLength={8}
+                />
+                {errors.studentId && (
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.studentId}
+                  </p>
+                )}
+              </div>
 
-          <Card className="bg-slate-800/50 border-orange-500/20 mb-6">
-            <CardHeader>
-              <CardTitle className="text-orange-400 flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                Select Subjects
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {subjects?.map((subject) => (
+              {/* DOB Password */}
+              <div>
+                <label className="block text-slate-200 font-semibold mb-2">
+                  🔐 DOB Password (ddmmyyyy)
+                </label>
+                <input
+                  type="password"
+                  value={formData.dobPassword}
+                  onChange={(e) =>
+                    handleInputChange("dobPassword", e.target.value)
+                  }
+                  className="w-full bg-slate-700/50 border border-slate-500 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:border-orange-400 focus:outline-none transition-colors"
+                  placeholder="01011995"
+                  maxLength={8}
+                />
+                {errors.dobPassword && (
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.dobPassword}
+                  </p>
+                )}
+              </div>
+
+              {/* Test Type */}
+              <div>
+                <label className="block text-slate-200 font-semibold mb-2">
+                  ⚔️ Test Type
+                </label>
+                <div className="grid grid-cols-2 gap-4">
                   <button
-                    key={subject.id}
-                    onClick={() => handleSubjectToggle(subject.id)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      selectedSubjects.includes(subject.id)
-                        ? 'border-orange-500 bg-orange-500/20 text-orange-400'
-                        : 'border-slate-600 hover:border-slate-500 text-gray-300'
+                    type="button"
+                    onClick={() => handleInputChange("testType", "full-length")}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      formData.testType === "full-length"
+                        ? "border-orange-400 bg-orange-400/20 text-orange-200"
+                        : "border-slate-500 bg-slate-700/30 text-slate-300 hover:border-slate-400"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{subject.name}</span>
-                      <span className={`w-4 h-4 rounded-full border-2 ${
-                        selectedSubjects.includes(subject.id) 
-                          ? 'bg-orange-500 border-orange-500' 
-                          : 'border-gray-400'
-                      }`}></span>
+                    <div className="text-2xl mb-2">📋</div>
+                    <div className="font-semibold">Full Length</div>
+                    <div className="text-sm opacity-80">
+                      Complete exam simulation
                     </div>
                   </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-slate-800/50 border-orange-500/20 mb-8">
-            <CardHeader>
-              <CardTitle className="text-orange-400 flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                Battle Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="block text-gray-300 mb-2 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Time Limit (minutes)
-                </label>
-                <input
-                  type="number"
-                  value={timeLimit}
-                  onChange={(e) => setTimeLimit(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-orange-500 focus:outline-none"
-                  min="15"
-                  max="180"
-                />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleInputChange("testType", "subject-wise")
+                    }
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      formData.testType === "subject-wise"
+                        ? "border-orange-400 bg-orange-400/20 text-orange-200"
+                        : "border-slate-500 bg-slate-700/30 text-slate-300 hover:border-slate-400"
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">📚</div>
+                    <div className="font-semibold">Subject Wise</div>
+                    <div className="text-sm opacity-80">
+                      Focused topic practice
+                    </div>
+                  </button>
+                </div>
+                {errors.testType && (
+                  <p className="text-red-400 text-sm mt-1">{errors.testType}</p>
+                )}
               </div>
-              <div>
-                <label className="block text-gray-300 mb-2 flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  Questions Count
-                </label>
-                <input
-                  type="number"
-                  value={questionCount}
-                  onChange={(e) => setQuestionCount(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-orange-500 focus:outline-none"
-                  min="10"
-                  max="100"
-                />
-              </div>
-            </CardContent>
-          </Card>
 
-          <div className="text-center">
-            <Button
-              onClick={handleStartBattle}
-              disabled={selectedSubjects.length === 0}
-              className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 text-lg font-semibold"
-            >
-              Begin War ⚔️
-            </Button>
-            {selectedSubjects.length === 0 && (
-              <p className="text-gray-400 text-sm mt-2">Please select at least one subject to continue</p>
-            )}
-          </div>
-        </div>
+              {/* Duration */}
+              {formData.testType && (
+                <div>
+                  <label className="block text-slate-200 font-semibold mb-2">
+                    ⏱️ Duration
+                  </label>
+                  <select
+                    value={formData.duration}
+                    onChange={(e) =>
+                      handleInputChange("duration", e.target.value)
+                    }
+                    className="w-full bg-slate-700/50 border border-slate-500 rounded-xl px-4 py-3 text-white focus:border-orange-400 focus:outline-none transition-colors"
+                  >
+                    <option value="">Select duration...</option>
+                    {getDurationOptions().map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.duration && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.duration}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-4 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                  className="flex-1 bg-slate-700/50 border-slate-500 text-slate-200 hover:bg-slate-600/50"
+                >
+                  ← Back to Home
+                </Button>
+
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-black text-lg py-6"
+                >
+                  🗡️ START THE WAR
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

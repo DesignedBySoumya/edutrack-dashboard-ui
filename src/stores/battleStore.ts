@@ -1,35 +1,42 @@
+import { create } from "zustand";
 
-import { create } from 'zustand';
+export type BattleConfig = {
+  studentId: string;
+  dobPassword: string;
+  testType: 'full-length' | 'subject-wise';
+  duration: number;
+};
 
-export type BattlePhase = 'config' | 'active' | 'completed';
-
-interface BattleSession {
-  selectedSubjects: string[];
-  timeLimit: number;
-  questionCount: number;
-  startTime: string;
-}
-
-interface BattleState {
-  phase: BattlePhase;
+type BattleStore = {
+  // Timer and battle state
+  timeLeft: number;
+  totalDuration: number;
   isActive: boolean;
-  currentSession: BattleSession | null;
-  setPhase: (phase: BattlePhase) => void;
-  setActive: (active: boolean) => void;
-  setCurrentSession: (session: BattleSession | null) => void;
-  resetBattle: () => void;
-}
+  isPaused: boolean;
+  phase: 'idle' | 'active' | 'completed';
+  config: BattleConfig | null;
 
-export const useBattleStore = create<BattleState>((set) => ({
-  phase: 'config',
+  // Actions
+  setConfig: (config: BattleConfig) => void;
+  startBattle: () => void;
+  endBattle: () => void;
+  updateTimeLeft: (time: number) => void;
+  pauseBattle: () => void;
+  resumeBattle: () => void;
+};
+
+export const useBattleStore = create<BattleStore>((set, get) => ({
+  timeLeft: 0,
+  totalDuration: 0,
   isActive: false,
-  currentSession: null,
-  setPhase: (phase) => set({ phase }),
-  setActive: (isActive) => set({ isActive }),
-  setCurrentSession: (currentSession) => set({ currentSession }),
-  resetBattle: () => set({ 
-    phase: 'config', 
-    isActive: false, 
-    currentSession: null 
-  }),
-}));
+  isPaused: false,
+  phase: 'idle',
+  config: null,
+
+  setConfig: (config) => set({ config, timeLeft: config.duration * 60, totalDuration: config.duration * 60 }),
+  startBattle: () => set({ isActive: true, isPaused: false, phase: 'active' }),
+  endBattle: () => set({ isActive: false, isPaused: false, phase: 'completed' }),
+  updateTimeLeft: (time) => set({ timeLeft: time }),
+  pauseBattle: () => set({ isPaused: true }),
+  resumeBattle: () => set({ isPaused: false }),
+})); 
