@@ -1,9 +1,10 @@
+
 import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -14,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AuthCallback from "./pages/AuthCallback";
+import WarMode from "./components/battlefield/war/WarMode";
 
 const queryClient = new QueryClient();
 
@@ -23,12 +25,6 @@ const DefenceMode = lazy(
   () => import("@/components/battlefield/defence/DefenseMode")
 );
 const Attack = lazy(() => import("./pages/battlefield/Attack"));
-const BeginBattle = lazy(
-  () => import("@/components/battlefield/war/BeginBattle")
-);
-const WarConfiguration = lazy(
-  () => import("@/components/battlefield/war/WarConfiguration")
-);
 const WarReportIndex = lazy(() => import("./pages/battlefield/WarReportIndex"));
 const PTSReportCard = lazy(() => import("./pages/battlefield/PTSReportCard"));
 const ReviewWeakChapters = lazy(
@@ -106,7 +102,7 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Suspense fallback={<div>Loading...</div>}>
-                      <BeginBattle  />
+                      <WarMode />
                     </Suspense>
                   </ProtectedRoute>
                 }
@@ -116,9 +112,7 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Suspense fallback={<div>Loading...</div>}>
-                      <WarConfiguration
-                        
-                      />
+                      <WarMode />
                     </Suspense>
                   </ProtectedRoute>
                 }

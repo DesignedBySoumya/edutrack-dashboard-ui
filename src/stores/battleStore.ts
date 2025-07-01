@@ -1,42 +1,22 @@
-import { create } from "zustand";
 
-export type BattleConfig = {
-  studentId: string;
-  dobPassword: string;
-  testType: 'full-length' | 'subject-wise';
-  duration: number;
-};
+import { create } from 'zustand';
 
-type BattleStore = {
-  // Timer and battle state
-  timeLeft: number;
-  totalDuration: number;
+export type BattlePhase = 'config' | 'active' | 'completed';
+
+interface BattleState {
+  phase: BattlePhase;
   isActive: boolean;
-  isPaused: boolean;
-  phase: 'idle' | 'active' | 'completed';
-  config: BattleConfig | null;
+  currentSession: any;
+  setPhase: (phase: BattlePhase) => void;
+  setActive: (active: boolean) => void;
+  setCurrentSession: (session: any) => void;
+}
 
-  // Actions
-  setConfig: (config: BattleConfig) => void;
-  startBattle: () => void;
-  endBattle: () => void;
-  updateTimeLeft: (time: number) => void;
-  pauseBattle: () => void;
-  resumeBattle: () => void;
-};
-
-export const useBattleStore = create<BattleStore>((set, get) => ({
-  timeLeft: 0,
-  totalDuration: 0,
+export const useBattleStore = create<BattleState>((set) => ({
+  phase: 'config',
   isActive: false,
-  isPaused: false,
-  phase: 'idle',
-  config: null,
-
-  setConfig: (config) => set({ config, timeLeft: config.duration * 60, totalDuration: config.duration * 60 }),
-  startBattle: () => set({ isActive: true, isPaused: false, phase: 'active' }),
-  endBattle: () => set({ isActive: false, isPaused: false, phase: 'completed' }),
-  updateTimeLeft: (time) => set({ timeLeft: time }),
-  pauseBattle: () => set({ isPaused: true }),
-  resumeBattle: () => set({ isPaused: false }),
-})); 
+  currentSession: null,
+  setPhase: (phase) => set({ phase }),
+  setActive: (isActive) => set({ isActive }),
+  setCurrentSession: (currentSession) => set({ currentSession }),
+}));
