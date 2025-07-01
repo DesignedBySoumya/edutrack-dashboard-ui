@@ -1,0 +1,586 @@
+
+{
+  "UPSC CSE": [
+    {
+      "id": 1,
+      "name": "Indian Polity and Governance",
+      "progress": 11,
+      "timeSpent": "26h 09m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Historical Background",
+          "progress": 40,
+          "topics": [
+            { "id": 1, "name": "Regulating Act 1773", "isCompleted": true, "timeSpent": "2h 30m" },
+            { "id": 2, "name": "Charter Act 1833", "isCompleted": true, "timeSpent": "1h 45m" },
+            { "id": 3, "name": "Government of India Act 1858", "isCompleted": false }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Constitution Framing",
+          "progress": 0,
+          "topics": [
+            { "id": 4, "name": "Constituent Assembly", "isCompleted": false },
+            { "id": 5, "name": "Drafting Committee", "isCompleted": false },
+            { "id": 6, "name": "Key Features", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Indian and World Geography",
+      "progress": 8,
+      "timeSpent": "9h 01m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Physical Geography",
+          "progress": 25,
+          "topics": [
+            { "id": 7, "name": "Physiographic Divisions", "isCompleted": true, "timeSpent": "3h 00m" },
+            { "id": 8, "name": "Drainage System", "isCompleted": false },
+            { "id": 9, "name": "Climate", "isCompleted": false }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Human Geography",
+          "progress": 0,
+          "topics": [
+            { "id": 10, "name": "Population Distribution", "isCompleted": false },
+            { "id": 11, "name": "Agricultural Patterns", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Indian Economy",
+      "progress": 33,
+      "timeSpent": "1h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 5,
+          "name": "Basic Concepts",
+          "progress": 60,
+          "topics": [
+            { "id": 12, "name": "GDP vs GNP", "isCompleted": true, "timeSpent": "30m" },
+            { "id": 13, "name": "Inflation Types", "isCompleted": true, "timeSpent": "25m" },
+            { "id": 14, "name": "Monetary Policy", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "SSC CGL": [
+    {
+      "id": 1,
+      "name": "General Intelligence & Reasoning",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Verbal Reasoning",
+          "progress": 0,
+          "topics": [
+            { "id": 1, "name": "Analogies", "isCompleted": false },
+            { "id": 2, "name": "Classification", "isCompleted": false },
+            { "id": 3, "name": "Series", "isCompleted": false }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Non-Verbal Reasoning",
+          "progress": 0,
+          "topics": [
+            { "id": 4, "name": "Pattern Completion", "isCompleted": false },
+            { "id": 5, "name": "Figure Matrix", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Quantitative Aptitude",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Arithmetic",
+          "progress": 0,
+          "topics": [
+            { "id": 6, "name": "Percentage", "isCompleted": false },
+            { "id": 7, "name": "Profit & Loss", "isCompleted": false },
+            { "id": 8, "name": "Simple & Compound Interest", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "English Comprehension",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 4,
+          "name": "Grammar",
+          "progress": 0,
+          "topics": [
+            { "id": 9, "name": "Tenses", "isCompleted": false },
+            { "id": 10, "name": "Articles", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "General Awareness",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "red",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 5,
+          "name": "Current Affairs",
+          "progress": 0,
+          "topics": [
+            { "id": 11, "name": "National Events", "isCompleted": false },
+            { "id": 12, "name": "International Events", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "IIT-JEE": [
+    {
+      "id": 1,
+      "name": "Physics",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Mechanics",
+          "progress": 0,
+          "topics": [
+            { "id": 1, "name": "Kinematics", "isCompleted": false },
+            { "id": 2, "name": "Dynamics", "isCompleted": false },
+            { "id": 3, "name": "Work, Energy & Power", "isCompleted": false }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Thermodynamics",
+          "progress": 0,
+          "topics": [
+            { "id": 4, "name": "Laws of Thermodynamics", "isCompleted": false },
+            { "id": 5, "name": "Heat Engines", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Chemistry",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Organic Chemistry",
+          "progress": 0,
+          "topics": [
+            { "id": 6, "name": "Hydrocarbons", "isCompleted": false },
+            { "id": 7, "name": "Functional Groups", "isCompleted": false }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Inorganic Chemistry",
+          "progress": 0,
+          "topics": [
+            { "id": 8, "name": "Periodic Table", "isCompleted": false },
+            { "id": 9, "name": "Chemical Bonding", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Mathematics",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 5,
+          "name": "Calculus",
+          "progress": 0,
+          "topics": [
+            { "id": 10, "name": "Limits", "isCompleted": false },
+            { "id": 11, "name": "Derivatives", "isCompleted": false },
+            { "id": 12, "name": "Integration", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "NEET": [
+    {
+      "id": 1,
+      "name": "Physics",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Mechanics",
+          "progress": 0,
+          "topics": [
+            { "our": 1, "name": "Laws of Motion", "isCompleted": false },
+            { "id": 2, "name": "Gravitation", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Chemistry",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 2,
+          "name": "Organic Chemistry",
+          "progress": 0,
+          "topics": [
+            { "id": 3, "name": "Biomolecules", "isCompleted": false },
+            { "id": 4, "name": "Polymers", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Botany",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Plant Physiology",
+          "progress": 0,
+          "topics": [
+            { "id": 5, "name": "Photosynthesis", "isCompleted": false },
+            { "id": 6, "name": "Respiration", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Zoology",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "red",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 4,
+          "name": "Human Physiology",
+          "progress": 0,
+          "topics": [
+            { "id": 7, "name": "Digestive System", "isCompleted": false },
+            { "id": 8, "name": "Respiratory System", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "GATE": [
+    {
+      "id": 1,
+      "name": "Programming & Data Structures",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Programming Fundamentals",
+          "progress": 0,
+          "topics": [
+            { "id": 1, "name": "Arrays & Strings", "isCompleted": false },
+            { "id": 2, "name": "Linked Lists", "isCompleted": false },
+            { "id": 3, "name": "Stacks & Queues", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Algorithms",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 2,
+          "name": "Sorting & Searching",
+          "progress": 0,
+          "topics": [
+            { "id": 4, "name": "Bubble Sort", "isCompleted": false },
+            { "id": 5, "name": "Binary Search", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Computer Networks",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "OSI Model",
+          "progress": 0,
+          "topics": [
+            { "id": 6, "name": "Physical Layer", "isCompleted": false },
+            { "id": 7, "name": "Data Link Layer", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "CAT": [
+    {
+      "id": 1,
+      "name": "Quantitative Ability",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Arithmetic",
+          "progress": 0,
+          "topics": [
+            { "id": 1, "name": "Percentages", "isCompleted": false },
+            { "id": 2, "name": "Ratios & Proportions", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Verbal Ability & Reading Comprehension",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 2,
+          "name": "Reading Comprehension",
+          "progress": 0,
+          "topics": [
+            { "id": 3, "name": "Passage Analysis", "isCompleted": false },
+            { "id": 4, "name": "Critical Reasoning", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Data Interpretation & Logical Reasoning",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Data Interpretation",
+          "progress": 0,
+          "topics": [
+            { "id": 5, "name": "Tables & Charts", "isCompleted": false },
+            { "id": 6, "name": "Graphs", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "CLAT": [
+    {
+      "id": 1,
+      "name": "English Language",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Comprehension",
+          "progress": 0,
+          "topics": [
+            { "id": 1, "name": "Reading Skills", "isCompleted": false },
+            { "id": 2, "name": "Vocabulary", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Current Affairs",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 2,
+          "name": "National Affairs",
+          "progress": 0,
+          "topics": [
+            { "id": 3, "name": "Politics", "isCompleted": false },
+            { "id": 4, "name": "Economics", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Legal Reasoning",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Legal Principles",
+          "progress": 0,
+          "topics": [
+            { "id": 5, "name": "Constitutional Law", "isCompleted": false },
+            { "id": 6, "name": "Contract Law", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "Bank PO": [
+    {
+      "id": 1,
+      "name": "Reasoning Ability",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "blue",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 1,
+          "name": "Logical Reasoning",
+          "progress": 0,
+          "topics": [
+            { "id": 1, "name": "Puzzles", "isCompleted": false },
+            { "id": 2, "name": "Seating Arrangement", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Quantitative Aptitude",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "green",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 2,
+          "name": "Number System",
+          "progress": 0,
+          "topics": [
+            { "id": 3, "name": "Simplification", "isCompleted": false },
+            { "id": 4, "name": "Approximation", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "English Language",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "purple",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 3,
+          "name": "Grammar",
+          "progress": 0,
+          "topics": [
+            { "id": 5, "name": "Error Detection", "isCompleted": false },
+            { "id": 6, "name": "Sentence Improvement", "isCompleted": false }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "General Awareness",
+      "progress": 0,
+      "timeSpent": "0h 00m",
+      "color": "red",
+      "isPlaying": false,
+      "chapters": [
+        {
+          "id": 4,
+          "name": "Banking Awareness",
+          "progress": 0,
+          "topics": [
+            { "id": 7, "name": "Banking Terms", "isCompleted": false },
+            { "id": 8, "name": "RBI Functions", "isCompleted": false }
+          ]
+        }
+      ]
+    }
+  ]
+}
