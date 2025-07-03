@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface FormData {
   name: string;
@@ -33,9 +32,8 @@ export function SignupForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
-  const { handleLoginSuccess } = useAuthRedirect({ redirectIfAuthenticated: true });
   const { toast } = useToast();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -86,25 +84,32 @@ export function SignupForm({
     e.preventDefault();
     
     if (!validateForm()) return;
-
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(formData.email, formData.password, formData.name);
+      const result = await signUp(formData.email, formData.password, formData.name);
       
-      if (error) {
-        setErrors({ general: error.message });
-      } else {
-        // Success - show success message and redirect to login
+      if (result.success) {
         toast({
           title: "Account created successfully!",
-          description: "Please check your email to verify your account, then sign in.",
+          description: "Please check your email to verify your account, then you can sign in.",
         });
         navigate('/login');
+      } else {
+        // Handle specific error cases
+        if (result.error?.message?.includes("User already registered")) {
+          setErrors({ email: "An account with this email already exists" });
+        } else if (result.error?.message?.includes("Invalid email")) {
+          setErrors({ email: "Please enter a valid email address" });
+        } else if (result.error?.message?.includes("Password")) {
+          setErrors({ password: result.error.message });
+        } else {
+          setErrors({ general: result.error?.message || "Signup failed. Please try again." });
+        }
       }
-    } catch (error) {
-      console.error('Signup failed:', error);
-      setErrors({ general: "Signup failed. Please try again." });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      setErrors({ general: "An unexpected error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -190,4 +195,4 @@ export function SignupForm({
       </div>
     </div>
   )
-} 
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
@@ -32,9 +32,9 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signInWithGoogle } = useAuth();
   const { handleLoginSuccess } = useAuthRedirect({ redirectIfAuthenticated: true });
   const { toast } = useToast();
+  const { user, isAuthenticated, signIn } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -42,6 +42,16 @@ export function LoginForm({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('loginSuccess') === 'true');
+
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      toast({
+        title: "Already signed in",
+        description: `You are already signed in as ${user.email}`,
+      });
+    }
+  }, [isAuthenticated, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,24 +89,21 @@ export function LoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-
+    if (isLoading) return; // Prevent double submission
     setIsLoading(true);
-    
     try {
-      const { error } = await signIn(formData.email, formData.password);
-      
-      if (error) {
-        setErrors({ general: error.message });
+      const result = await signIn(formData.email, formData.password);
+      if (result.success) {
+        sessionStorage.setItem('welcomeShown', 'true');
+        handleLoginSuccess('/');
+        toast({
+          title: "Login successful!",
+          description: "Welcome back!",
+        });
       } else {
-        // Set login success flag before redirect
-        localStorage.setItem('loginSuccess', 'true');
-        // Success - redirect to intended destination or index page
-        handleLoginSuccess();
+        setErrors({ general: "Invalid email or password." });
       }
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (error: any) {
       setErrors({ general: "Login failed. Please try again." });
     } finally {
       setIsLoading(false);
@@ -108,32 +115,9 @@ export function LoginForm({
     console.log("Apple login clicked");
   };
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    console.log('Starting Google login...');
-    try {
-      const from = location.state?.from?.pathname || '/';
-      const { error } = await signInWithGoogle(from);
-      console.log('Google login result:', { error });
-      if (error) {
-        console.error('Google login error:', error);
-        setErrors({ general: error.message });
-      } else {
-        console.log('Google login successful, redirecting...');
-        // Set login success flag for Google OAuth as well
-        localStorage.setItem('loginSuccess', 'true');
-        toast({
-          title: "Login successful!",
-          description: "Welcome back to your study dashboard.",
-        });
-      }
-      // Google OAuth will handle the redirect automatically
-    } catch (error) {
-      console.error('Google login failed:', error);
-      setErrors({ general: "Google login failed. Please try again." });
-    } finally {
-      setIsGoogleLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    // TODO: Implement Google login (UI only for now)
+    alert('Google login is not implemented.');
   };
 
   return (
@@ -163,19 +147,24 @@ export function LoginForm({
                   </svg>
                   Login with Apple
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                   onClick={handleGoogleLogin}
                   disabled={isGoogleLoading}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                      fill="currentColor"
-                    />
-                  </svg>
+                  <span className="mr-2 flex items-center">
+                    {/* Google SVG */}
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <g>
+                        <path d="M17.64 9.2045C17.64 8.5665 17.5827 7.95225 17.4764 7.3635H9V10.845H13.8436C13.635 11.97 12.9645 12.915 11.9673 13.5645V15.5545H14.655C16.185 14.145 17.64 11.9273 17.64 9.2045Z" fill="#4285F4"/>
+                        <path d="M9 18C11.43 18 13.4673 17.2275 14.655 15.5545L11.9673 13.5645C11.3223 14.0045 10.4823 14.2725 9 14.2725C6.6555 14.2725 4.6785 12.5445 3.9645 10.395H1.179V12.4515C2.3625 15.0105 5.418 18 9 18Z" fill="#34A853"/>
+                        <path d="M3.9645 10.395C3.7845 9.9555 3.681 9.4785 3.681 9C3.681 8.5215 3.7845 8.0445 3.9645 7.605V5.5485H1.179C0.627 6.66075 0.318 7.791 0.318 9C0.318 10.209 0.627 11.3393 1.179 12.4515L3.9645 10.395Z" fill="#FBBC05"/>
+                        <path d="M9 3.7275C10.305 3.7275 11.355 4.179 12.1275 4.8975L14.715 2.31C13.464 1.119 11.43 0 9 0C5.418 0 2.3625 2.9895 1.179 5.5485L3.9645 7.605C4.6785 5.4555 6.6555 3.7275 9 3.7275Z" fill="#EA4335"/>
+                      </g>
+                    </svg>
+                  </span>
                   {isGoogleLoading ? "Connecting to Google..." : "Login with Google"}
                 </Button>
               </div>
@@ -216,7 +205,7 @@ export function LoginForm({
                     type="password" 
                     value={formData.password}
                     onChange={handleInputChange}
-                    required 
+                    required
                   />
                   {errors.password && (
                     <p className="text-sm text-red-500">{errors.password}</p>
@@ -245,4 +234,4 @@ export function LoginForm({
       </div>
     </div>
   )
-} 
+}

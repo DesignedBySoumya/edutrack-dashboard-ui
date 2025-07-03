@@ -1,52 +1,31 @@
-import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 interface UseAuthRedirectOptions {
-  redirectTo?: string;
-  requireAuth?: boolean;
   redirectIfAuthenticated?: boolean;
 }
 
-export function useAuthRedirect({
-  redirectTo = '/',
-  requireAuth = false,
-  redirectIfAuthenticated = false
-}: UseAuthRedirectOptions = {}) {
+export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, loading } = useAuth();
   const { toast } = useToast();
+  const { redirectIfAuthenticated = false } = options;
 
   useEffect(() => {
-    if (loading) return;
-
-    // If authentication is required and user is not authenticated
-    if (requireAuth && !isAuthenticated) {
-      const from = location.pathname;
-      navigate('/login', { 
-        state: { from: { pathname: from } },
-        replace: true 
-      });
-      return;
+    if (redirectIfAuthenticated) {
+      const isAuthenticated = localStorage.getItem('loginSuccess') === 'true';
+      if (isAuthenticated && (location.pathname === '/login' || location.pathname === '/signup')) {
+        navigate('/dashboard', { replace: true });
+      }
     }
-
-    // If user is authenticated but shouldn't be on this page (e.g., login/signup)
-    if (redirectIfAuthenticated && isAuthenticated) {
-      navigate(redirectTo, { replace: true });
-      return;
-    }
-  }, [isAuthenticated, loading, requireAuth, redirectIfAuthenticated, navigate, location, redirectTo]);
+  }, [redirectIfAuthenticated, location.pathname, navigate]);
 
   const handleLoginSuccess = (intendedDestination?: string) => {
-    const from = intendedDestination || location.state?.from?.pathname || redirectTo;
-    
-    // Set login success flag if redirecting to index page
+    const from = intendedDestination || location.state?.from?.pathname || '/';
     if (from === '/' || from === '/index') {
       localStorage.setItem('loginSuccess', 'true');
     }
-    
     navigate(from, { replace: true });
     toast({
       title: "Login successful!",
@@ -72,8 +51,6 @@ export function useAuthRedirect({
   };
 
   return {
-    isAuthenticated,
-    loading,
     handleLoginSuccess,
     handleSignOut,
   };

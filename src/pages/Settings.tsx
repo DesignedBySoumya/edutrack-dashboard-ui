@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { 
@@ -27,10 +27,9 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 
 const Settings = () => {
-  const navigate = useNavigate();
-  const { user, isAuthenticated, loading, signOut } = useAuth();
-  const { handleSignOut } = useAuthRedirect();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [theme, setTheme] = useState('system');
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [widgets, setWidgets] = useState({
@@ -46,13 +45,6 @@ const Settings = () => {
   };
 
   const handleBackup = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to use cloud backup features.",
-      });
-      return;
-    }
     toast({
       title: "Backup successful",
       description: "Your data has been backed up to the cloud.",
@@ -78,20 +70,24 @@ const Settings = () => {
   };
 
   const handleAuthenticationClick = () => {
-    if (isAuthenticated) {
-      // Show a toast message instead of popup alert
+    if (user?.email) {
       toast({
         title: "Already signed in",
-        description: `You are already signed in as ${user?.email}`,
+        description: `You are already signed in as ${user.email}`,
       });
     } else {
-      // Simply navigate to login page without any popup
       navigate('/login');
     }
   };
 
-  const handleSignOutClick = () => {
-    handleSignOut(signOut);
+  const handleSignOutClick = async () => {
+    await signOut();
+    sessionStorage.removeItem('welcomeShown');
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    });
+    navigate('/login', { replace: true });
   };
 
   const settingsItems = [
@@ -118,8 +114,8 @@ const Settings = () => {
     },
     { 
       icon: Shield, 
-      title: isAuthenticated ? 'Account' : 'Authentication', 
-      subtitle: isAuthenticated ? `Signed in as ${user?.email}` : 'Sign in required', 
+      title: user?.email ? 'Account' : 'Authentication',
+      subtitle: user?.email ? `Signed in as ${user.email}` : 'Sign in required',
       action: handleAuthenticationClick,
       requiresAuth: false
     },
@@ -181,17 +177,6 @@ const Settings = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0f0f12] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading settings...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0f0f12] text-white pb-20">
       <Header />
@@ -205,7 +190,7 @@ const Settings = () => {
         <div className="space-y-3">
           {settingsItems.map((item, index) => {
             // Skip auth-required items if not authenticated
-            if (item.requiresAuth && !isAuthenticated) {
+            if (item.requiresAuth) {
               return null;
             }
 
@@ -229,18 +214,16 @@ const Settings = () => {
         </div>
 
         {/* Sign Out Button for authenticated users */}
-        {isAuthenticated && (
-          <div className="mt-6">
-            <Button 
-              variant="destructive" 
-              className="w-full"
-              onClick={handleSignOutClick}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
-        )}
+        <div className="mt-6">
+          <Button 
+            variant="destructive" 
+            className="w-full"
+            onClick={handleSignOutClick}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
 
         {/* Widgets Section */}
         <div className="mt-6">

@@ -1,173 +1,129 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 interface AuthContextType {
-  user: User | null
-  session: Session | null
-  loading: boolean
-  isAuthenticated: boolean
-  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
-  signInWithGoogle: (redirectTo?: string) => Promise<{ error: any }>
-  signOut: () => Promise<void>
-  checkAuthStatus: () => Promise<void>
+  session: any;
+  user: any;
+  loading: boolean;
+  isAuthenticated: boolean;
+  signUp: (email: string, password: string, name?: string) => Promise<{ success: boolean; error?: any }>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: any }>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const isAuthenticated = !!user && !!session
+  // Robust sign up (handles email confirmation and always inserts profile)
+  const signUp = async (email: string, password: string, name?: string) => {
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: email.toLowerCase(),
+      password,
+    });
 
-  const checkAuthStatus = async () => {
-    try {
-      setLoading(true)
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
-      if (error) {
-        console.error('Error checking auth status:', error)
-        setUser(null)
-        setSession(null)
-      } else {
-        setSession(session)
-        setUser(session?.user ?? null)
-      }
-    } catch (error) {
-      console.error('Failed to check auth status:', error)
-      setUser(null)
-      setSession(null)
-    } finally {
-      setLoading(false)
+    if (signUpError) {
+      console.error("Supabase signUp error:", signUpError);
+      return { success: false, error: signUpError };
     }
-  }
+
+    // Handle both immediate and email-confirmation flows
+    const userId = data.user?.id || data.session?.user?.id;
+    if (!userId || !name) {
+      console.error("User ID or name missing after signUp", { userId, name });
+      return { success: false, error: { message: "User or name missing." } };
+    }
+
+    // Insert into profiles table with new schema: id, name, email
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert([{ id: userId, name, email: email.toLowerCase() }]);
+
+    if (profileError) {
+      console.error("Supabase profile insert error:", profileError);
+      return { success: false, error: profileError };
+    }
+
+    return { success: true };
+  };
+
+  // Sign in
+  const signIn = async (email: string, password: string) => {
+    const trimmedEmail = email.toLowerCase().trim();
+    const trimmedPassword = password.trim();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password: trimmedPassword,
+    });
+    if (error) {
+      console.error("Login error:", error.message);
+      return { success: false, error: error.message };
+    }
+    console.log("Login successful:", data);
+    return { success: true };
+  };
+
+  // Sign out
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    localStorage.removeItem('loginSuccess');
+    localStorage.removeItem('userEmail');
+    sessionStorage.removeItem('welcomeShown');
+    if (error) {
+      console.error("Error signing out:", error.message);
+    }
+  };
 
   useEffect(() => {
-    checkAuthStatus()
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email)
-      
-      if (event === 'SIGNED_IN') {
-        setSession(session)
-        setUser(session?.user ?? null)
-        // Store user info in localStorage for persistence
-        if (session?.user) {
-          localStorage.setItem('user_email', session.user.email || '')
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setSession(null)
-        setUser(null)
-        // Clear user info from localStorage
-        localStorage.removeItem('user_email')
-      } else if (event === 'TOKEN_REFRESHED') {
-        setSession(session)
-        setUser(session?.user ?? null)
-      } else if (event === 'USER_UPDATED') {
-        setSession(session)
-        setUser(session?.user ?? null)
-      }
-      
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const signUp = async (email: string, password: string, name: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name,
-          },
-        },
-      })
-      return { error }
-    } catch (error) {
-      console.error('Signup error:', error)
-      return { error: { message: 'Signup failed. Please try again.' } }
-    }
-  }
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      return { error }
-    } catch (error) {
-      console.error('Sign in error:', error)
-      return { error: { message: 'Sign in failed. Please try again.' } }
-    }
-  }
-
-  const signInWithGoogle = async (redirectTo?: string) => {
-    try {
-      // Always redirect to auth callback for proper handling
-      const callbackUrl = `${window.location.origin}/auth/callback`;
-      
-      // Set login success flag if redirecting to index page
-      if (redirectTo === '/' || redirectTo === '/index') {
+    setLoading(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      // Sync localStorage with actual auth state
+      if (session?.user) {
         localStorage.setItem('loginSuccess', 'true');
+        localStorage.setItem('userEmail', session.user.email || '');
+      } else {
+        localStorage.removeItem('loginSuccess');
+        localStorage.removeItem('userEmail');
       }
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      })
-      return { error }
-    } catch (error) {
-      console.error('Google sign in error:', error)
-      return { error: { message: 'Google sign in failed. Please try again.' } }
-    }
-  }
+    });
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Sign out error:', error)
-      }
-    } catch (error) {
-      console.error('Sign out failed:', error)
-    }
-  }
+  return (
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        loading,
+        isAuthenticated: !!session,
+        signUp,
+        signIn,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
-  const value = {
-    user,
-    session,
-    loading,
-    isAuthenticated,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signOut,
-    checkAuthStatus,
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-} 
+  return context;
+}; 

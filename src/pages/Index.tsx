@@ -43,7 +43,7 @@ const Index = () => {
       id: 1,
       name: "Indian Polity and Governance",
       progress: 11,
-      timeSpent: "26h 09m",
+      timeSpent: "06h 09m",
       color: "blue",
       isPlaying: false,
       chapters: [

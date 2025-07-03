@@ -14,6 +14,9 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AuthCallback from "./pages/AuthCallback";
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -38,6 +41,15 @@ const CompareMocks = lazy(() => import("./pages/battlefield/CompareMocks"));
 const BattleAnalysis = lazy(() => import("./pages/battlefield/BattleAnalysis"));
 
 const App = () => {
+  const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
+  useEffect(() => {
+    if (isAuthenticated && user?.email && !sessionStorage.getItem("welcomeShown")) {
+      toast({ title: "Welcome back", description: `Signed in as ${user.email}` });
+      sessionStorage.setItem("welcomeShown", "true");
+    }
+  }, [isAuthenticated, user]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -46,7 +58,11 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
