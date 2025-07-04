@@ -5,11 +5,17 @@ import { BookOpen, Calendar, Shuffle, Star, Edit, Trash2 } from "lucide-react";
 import { useFlashcardStore, Flashcard } from "@/store/flashcardStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 const OrganizeStage = () => {
-  const { cards, setStage, toggleStar, deleteCard } = useFlashcardStore();
+  const { cards, fetchCards, setStage, toggleStar, deleteCard } = useFlashcardStore();
   const [viewMode, setViewMode] = useState<'subject' | 'week' | 'all'>('all');
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchCards();
+  }, []);
 
   const groupedCards = (): Record<string, Flashcard[]> => {
     if (viewMode === 'subject') {
