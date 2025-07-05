@@ -22,10 +22,44 @@ export const TimetableGrid = ({ timeBlocks, onCellClick }: TimetableGridProps) =
     '9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM'
   ];
 
-  const getCurrentDate = () => {
+  const getWeekDates = () => {
     const today = new Date();
     const currentDay = today.getDay();
-    return currentDay === 0 ? 6 : currentDay - 1;
+    
+    // Calculate days to subtract to get to Monday (1 = Monday, 0 = Sunday)
+    let daysToSubtract;
+    if (currentDay === 0) { // Sunday
+      daysToSubtract = 6; // Go back 6 days to get to Monday
+    } else {
+      daysToSubtract = currentDay - 1; // Go back (currentDay - 1) days to get to Monday
+    }
+    
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - daysToSubtract);
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      weekDates.push(date);
+    }
+    
+    // Debug logging
+    console.log('Today:', today.toDateString());
+    console.log('Current day of week:', currentDay);
+    console.log('Days to subtract:', daysToSubtract);
+    console.log('Monday:', monday.toDateString());
+    console.log('Week dates:', weekDates.map(d => d.toDateString()));
+    
+    return weekDates;
+  };
+
+  const getCurrentDate = () => {
+    const today = new Date();
+    const weekDates = getWeekDates();
+    const todayString = today.toDateString();
+    
+    return weekDates.findIndex(date => date.toDateString() === todayString);
   };
 
   const getTimeBlocksForCell = (day: string, time: string) => {
@@ -35,10 +69,27 @@ export const TimetableGrid = ({ timeBlocks, onCellClick }: TimetableGridProps) =
     );
   };
 
+  const weekDates = getWeekDates();
   const currentDayIndex = getCurrentDate();
+  const today = new Date();
+  const currentMonth = today.toLocaleDateString('en-US', { month: 'long' });
+  const currentYear = today.getFullYear();
+
+  // Debug logging for render values
+  console.log('Current day index:', currentDayIndex);
+  console.log('Current month:', currentMonth);
+  console.log('Current year:', currentYear);
+  console.log('Week dates for display:', weekDates.map(d => d.getDate()));
 
   return (
     <div className="bg-[#1a1a1f] rounded-xl border border-slate-800 p-4 overflow-x-auto">
+      {/* Month and Year Header */}
+      <div className="text-center mb-4">
+        <div className="text-lg font-semibold text-white">
+          📅 {currentMonth} {currentYear}
+        </div>
+      </div>
+
       {/* Header with days */}
       <div className="grid grid-cols-8 gap-2 mb-4">
         <div className="text-xs text-gray-400 font-medium p-2"></div>
@@ -54,7 +105,7 @@ export const TimetableGrid = ({ timeBlocks, onCellClick }: TimetableGridProps) =
                 ? 'bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto' 
                 : 'text-white'
             }`}>
-              {new Date().getDate() + (index - currentDayIndex)}
+              {weekDates[index].getDate()}
             </div>
           </div>
         ))}

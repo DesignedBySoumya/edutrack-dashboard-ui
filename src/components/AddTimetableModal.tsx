@@ -11,7 +11,7 @@ interface AddTimetableModalProps {
 
 interface ScheduleData {
   category: string;
-  days: string[];
+  dates: string[]; // Array of ISO date strings
   startTime: string;
   endTime: string;
   notifications: boolean;
@@ -26,39 +26,61 @@ const categories = [
   { name: 'Current Affairs', color: '#06b6d4' },
 ];
 
-const dayOptions = [
-  { short: 'Mo', full: 'Monday' },
-  { short: 'Tu', full: 'Tuesday' },
-  { short: 'We', full: 'Wednesday' },
-  { short: 'Th', full: 'Thursday' },
-  { short: 'Fr', full: 'Friday' },
-  { short: 'Sa', full: 'Saturday' },
-  { short: 'Su', full: 'Sunday' },
-];
+// Get current week dates (Monday to Sunday)
+const getCurrentWeekDates = () => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  
+  let daysToSubtract;
+  if (currentDay === 0) { // Sunday
+    daysToSubtract = 6;
+  } else {
+    daysToSubtract = currentDay - 1;
+  }
+  
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysToSubtract);
+  
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    weekDates.push({
+      date: date.toISOString().split('T')[0],
+      dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+      dayShort: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      displayDate: date.getDate()
+    });
+  }
+  
+  return weekDates;
+};
 
 export const AddTimetableModal = ({ isOpen, onClose, onSave }: AddTimetableModalProps) => {
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [notifications, setNotifications] = useState(false);
 
-  const handleDayToggle = (day: string) => {
-    setSelectedDays(prev => 
-      prev.includes(day) 
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
+  const weekDates = getCurrentWeekDates();
+
+  const handleDateToggle = (date: string) => {
+    setSelectedDates(prev => 
+      prev.includes(date) 
+        ? prev.filter(d => d !== date)
+        : [...prev, date]
     );
   };
 
   const handleSave = () => {
-    if (!selectedCategory || selectedDays.length === 0 || !startTime || !endTime) {
+    if (!selectedCategory || selectedDates.length === 0 || !startTime || !endTime) {
       return;
     }
 
     onSave({
       category: selectedCategory,
-      days: selectedDays,
+      dates: selectedDates,
       startTime,
       endTime,
       notifications
@@ -66,7 +88,7 @@ export const AddTimetableModal = ({ isOpen, onClose, onSave }: AddTimetableModal
 
     // Reset form
     setSelectedCategory('');
-    setSelectedDays([]);
+    setSelectedDates([]);
     setStartTime('');
     setEndTime('');
     setNotifications(false);
@@ -119,23 +141,24 @@ export const AddTimetableModal = ({ isOpen, onClose, onSave }: AddTimetableModal
             </div>
           </div>
 
-          {/* Day Selector */}
+          {/* Date Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">
-              Select Days
+              Select Dates (This Week)
             </label>
-            <div className="flex flex-wrap gap-2">
-              {dayOptions.map((day) => (
+            <div className="grid grid-cols-7 gap-2">
+              {weekDates.map((weekDate) => (
                 <button
-                  key={day.short}
-                  onClick={() => handleDayToggle(day.full)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedDays.includes(day.full)
+                  key={weekDate.date}
+                  onClick={() => handleDateToggle(weekDate.date)}
+                  className={`p-2 rounded-lg text-xs font-medium transition-colors flex flex-col items-center ${
+                    selectedDates.includes(weekDate.date)
                       ? 'bg-blue-500 text-white'
                       : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
                   }`}
                 >
-                  {day.short}
+                  <span>{weekDate.dayShort}</span>
+                  <span className="text-lg font-bold">{weekDate.displayDate}</span>
                 </button>
               ))}
             </div>
@@ -186,7 +209,7 @@ export const AddTimetableModal = ({ isOpen, onClose, onSave }: AddTimetableModal
         <div className="p-6 border-t border-slate-800">
           <button
             onClick={handleSave}
-            disabled={!selectedCategory || selectedDays.length === 0 || !startTime || !endTime}
+            disabled={!selectedCategory || selectedDates.length === 0 || !startTime || !endTime}
             className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
           >
             Save Schedule
