@@ -8,6 +8,34 @@ import { Badge } from "@/components/ui/badge";
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+const CardStats = ({ cardId }: { cardId: string }) => {
+  const [stats, setStats] = useState<{ correct: number; incorrect: number } | null>(null);
+  useEffect(() => {
+    async function fetchStats() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('card_reviews')
+        .select('correct_count, incorrect_count')
+        .eq('user_id', user.id)
+        .eq('card_id', cardId)
+        .maybeSingle();
+      if (!error && data) {
+        setStats({ correct: data.correct_count, incorrect: data.incorrect_count });
+      } else {
+        setStats({ correct: 0, incorrect: 0 });
+      }
+    }
+    fetchStats();
+  }, [cardId]);
+  return (
+    <>
+      <span>Correct: {stats ? stats.correct : '-'}</span>
+      <span>Incorrect: {stats ? stats.incorrect : '-'}</span>
+    </>
+  );
+};
+
 const OrganizeStage = () => {
   const { cards, fetchCards, setStage, toggleStar, deleteCard } = useFlashcardStore();
   const [viewMode, setViewMode] = useState<'subject' | 'week' | 'all'>('all');
@@ -157,8 +185,14 @@ const OrganizeStage = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
+                          if (!window.confirm('Are you sure you want to delete this flashcard?')) return;
+                          const { error } = await supabase.from('flashcards').delete().eq('id', card.id);
+                          if (error) {
+                            console.error('Failed to delete flashcard:', error.message);
+                            return;
+                          }
                           deleteCard(card.id);
                         }}
                         className="p-1 text-red-400 hover:text-red-300"
@@ -181,8 +215,7 @@ const OrganizeStage = () => {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between text-xs text-[#93A5CF]">
-                    <span>Correct: {card.correctCount}</span>
-                    <span>Incorrect: {card.incorrectCount}</span>
+                    <CardStats cardId={card.id} />
                   </div>
                 </motion.div>
               ))}

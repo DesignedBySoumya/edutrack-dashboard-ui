@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabaseClient';
+import { markCardCorrect as supabaseMarkCardCorrect, markCardIncorrect as supabaseMarkCardIncorrect } from '@/lib/spacedRepetition';
 
 // Interface updated to use consistent camelCase for all properties.
 export interface Flashcard {
@@ -47,7 +48,9 @@ interface FlashcardStore {
   addPoints: (points: number) => void;
   setNextReviewTime: (time: number) => void;
   generateCardsFromContent: (content: any) => void;
-  fetchCards: () => Promise<void>;
+        fetchCards: () => Promise<void>;
+      fetchUserStats: () => Promise<void>;
+      syncUserStats: () => Promise<void>;
 }
 
 export const useFlashcardStore = create<FlashcardStore>()(
@@ -56,9 +59,9 @@ export const useFlashcardStore = create<FlashcardStore>()(
       stage: 1,
       cards: [],
       currentCardIndex: 0,
-      points: 0,
-      streak: 0,
-      level: 1,
+      points: 0, // Will be fetched from Supabase
+      streak: 0, // Will be fetched from Supabase
+      level: 1, // Will be fetched from Supabase
       lastStudyDate: '',
       nextReviewTime: null,
       studySession: {
@@ -154,6 +157,45 @@ export const useFlashcardStore = create<FlashcardStore>()(
         });
       },
 
+      fetchUserStats: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No authenticated user found');
+          return;
+        }
+
+        try {
+          // Fetch the most recent session to get current stats
+          const { data, error } = await supabase
+            .from('review_sessions')
+            .select('total_xp_earned, streak_count, level')
+            .eq('user_id', user.id)
+            .order('ended_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('Error fetching user stats:', error);
+            return;
+          }
+
+          // Update store with fetched data or defaults
+          set({
+            points: data?.total_xp_earned || 0,
+            streak: data?.streak_count || 0,
+            level: data?.level || 1,
+          });
+
+          console.log('✅ Fetched user stats from Supabase:', {
+            points: data?.total_xp_earned || 0,
+            streak: data?.streak_count || 0,
+            level: data?.level || 1,
+          });
+        } catch (error) {
+          console.error('Error in fetchUserStats:', error);
+        }
+      },
+
       updateCard: (id, updates) => {
         // This function will need a similar mapping if it ever updates the DB directly.
         // For now, it only updates local state, which is fine.
@@ -171,7 +213,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
         }));
       },
 
-      markCardCorrect: (id) => {
+      markCardCorrect: async (id) => {
+        await supabaseMarkCardCorrect(id);
         const state = get();
         const now = Date.now();
         const nextReview = now + (5 * 24 * 60 * 60 * 1000); // 5 days later
@@ -193,7 +236,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
         }));
       },
 
-      markCardIncorrect: (id) => {
+      markCardIncorrect: async (id) => {
+        await supabaseMarkCardIncorrect(id);
         const state = get();
         const now = Date.now();
         const nextReview = now + (24 * 60 * 60 * 1000); // 1 day later
@@ -294,6 +338,21 @@ export const useFlashcardStore = create<FlashcardStore>()(
         sampleCards.forEach(async (card) => {
           await get().addCard(card);
         });
+      },
+
+      syncUserStats: async () => {
+        try {
+          const { getUserStats } = await import('@/lib/reviewSessions');
+          const stats = await getUserStats();
+          set({
+            points: stats.total_xp_earned,
+            streak: stats.streak_count,
+            level: stats.level,
+          });
+        } catch (error) {
+          console.error('Error syncing user stats:', error);
+          // Keep default values if sync fails
+        }
       },
     }),
     {

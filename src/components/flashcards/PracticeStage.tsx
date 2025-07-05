@@ -5,6 +5,9 @@ import { useFlashcardStore } from "@/store/flashcardStore";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { getDueFlashcards } from '@/lib/spacedRepetition';
+import { supabase } from '@/lib/supabaseClient';
+import saveReviewSession from "@/lib/reviewSessions";
 const PracticeStage = () => {
   const {
     cards,
@@ -15,21 +18,107 @@ const PracticeStage = () => {
     nextCard,
     setStage,
     updateStreak,
-    setNextReviewTime
+    setNextReviewTime,
+    fetchUserStats,
+    // Add set function from Zustand
+    // (Zustand's set is not exposed directly, so useFlashcardStore.setState)
   } = useFlashcardStore();
   const [showAnswer, setShowAnswer] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<string | null>(null);
   const currentCard = cards[currentCardIndex];
+  // Add state for review stats
+  const [reviewStats, setReviewStats] = useState<{correct: number, incorrect: number} | null>(null);
+  useEffect(() => {
+    async function fetchReviewStats() {
+      if (!currentCard) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('card_reviews')
+        .select('correct_count, incorrect_count')
+        .eq('user_id', user.id)
+        .eq('card_id', currentCard.id)
+        .maybeSingle();
+      if (!error && data) {
+        setReviewStats({
+          correct: data.correct_count,
+          incorrect: data.incorrect_count
+        });
+      } else {
+        setReviewStats({ correct: 0, incorrect: 0 });
+      }
+    }
+    fetchReviewStats();
+  }, [currentCard]);
   const progress = studySession.total / cards.length * 100;
   useEffect(() => {
-    if (studySession.total >= cards.length && !sessionComplete) {
+    // Fetch user stats from Supabase when component mounts
+    fetchUserStats();
+  }, [fetchUserStats]);
+
+  useEffect(() => {
+    // Only fetch if cards are empty
+    if (cards.length === 0) {
+      (async () => {
+        const dueCards = await getDueFlashcards();
+        // Map DB fields to Flashcard interface if needed
+        useFlashcardStore.setState({
+          cards: (dueCards || []).map((card) => ({
+            id: card.id,
+            userId: card.user_id,
+            question: card.question,
+            answer: card.answer,
+            subject: card.subject,
+            difficulty: card.difficulty,
+            correctCount: card.correct_count,
+            incorrectCount: card.incorrect_count,
+            isStarred: card.is_starred || false,
+            createdAt: card.created_at,
+            lastReviewed: card.last_reviewed,
+            nextReview: card.next_review,
+          })),
+        });
+      })();
+    } else if (!sessionStartTime) {
+      setSessionStartTime(new Date().toISOString());
+    }
+  }, [cards, sessionStartTime]);
+  useEffect(() => {
+    if (studySession.total >= cards.length && !sessionComplete && cards.length > 0) {
+      const ended_at = new Date().toISOString();
       setSessionComplete(true);
       updateStreak();
-      // Set next review time to 24 hours from now
-      setNextReviewTime(Date.now() + 24 * 60 * 60 * 1000);
+      setNextReviewTime(Date.now() + 2 * 60 * 1000);
+
+      const accuracy = studySession.total > 0 ? (studySession.correct / studySession.total) * 100 : 0;
+      let level = 1;
+      if (accuracy >= 90) level = 4;
+      else if (accuracy >= 75) level = 3;
+      else if (accuracy >= 50) level = 2;
+
+      saveReviewSession({
+        started_at: sessionStartTime || new Date().toISOString(),
+        ended_at,
+        correct_count: studySession.correct,
+        incorrect_count: studySession.incorrect,
+        total_xp_earned: 0, // Will be calculated by the function
+        streak_count: 0, // Will be calculated by the function
+        level: 1, // Will be calculated by the function
+      }).then(result => {
+        console.log("Session saved successfully:", {
+          xp: result.calculatedXp,
+          streak: result.calculatedStreak,
+          level: result.calculatedLevel
+        });
+        // Refresh user stats from Supabase after saving session
+        fetchUserStats();
+      }).catch(error => {
+        console.error("Failed to save review session:", error);
+      });
     }
-  }, [studySession.total, cards.length, sessionComplete]);
+  }, [studySession, cards.length, sessionComplete, updateStreak, setNextReviewTime, sessionStartTime]);
   const handleSwipe = (direction: 'left' | 'right') => {
     if (!currentCard) return;
     setSwipeDirection(direction);
@@ -225,6 +314,12 @@ const PracticeStage = () => {
                     </motion.div>}
                 </AnimatePresence>
               </div>
+            </div>
+            {/* Add review stats display below card content */}
+            <div className="mt-6 flex justify-center gap-6 text-sm text-[#93A5CF]">
+              <span>✅ {reviewStats ? reviewStats.correct : '-'} correct</span>
+              <span>❌ {reviewStats ? reviewStats.incorrect : '-'} incorrect</span>
+              <span>Total: {reviewStats ? reviewStats.correct + reviewStats.incorrect : '-'}</span>
             </div>
           </motion.div>
         </AnimatePresence>
