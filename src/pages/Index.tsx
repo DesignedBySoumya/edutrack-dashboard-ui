@@ -51,24 +51,11 @@ const Index = () => {
       try {
         setLoading(true);
         
-        // Test exam table connection first
-        const { data: examData, error: examError } = await supabase
-          .from('exam')
-          .select('*')
-          .limit(5);
-
-        if (examError) {
-          console.error('Error connecting to exam table:', examError);
-        } else {
-          console.log('Exam table connected successfully. Available exams:', examData);
-        }
-        
-        // First, get all subjects
+        // Get subjects (all subjects are linked to exam_id: 1 for now)
         const { data: subjectsData, error: subjectsError } = await supabase
           .from('subjects')
           .select('*')
-          .eq('exam_id', selectedExamId)
-          .order('name', { ascending: true });
+          .order('order_index', { ascending: true });
 
         if (subjectsError) {
           console.error('Error fetching subjects:', subjectsError);
@@ -100,13 +87,43 @@ const Index = () => {
                 };
               }
 
-              // Map chapters with empty topics arrays (since topics table doesn't exist)
-              const chaptersWithTopics = (chaptersData || []).map((chapter: any) => ({
-                id: chapter.id,
-                name: chapter.name,
-                progress: chapter.progress || 0,
-                topics: [] // Empty topics array since topics table doesn't exist
-              }));
+              console.log(`Chapters for subject ${subject.name}:`, chaptersData);
+
+              // Map chapters with subtopics
+              const chaptersWithTopics = await Promise.all(
+                (chaptersData || []).map(async (chapter: any) => {
+                  // Get subtopics for this chapter
+                  const { data: subtopicsData, error: subtopicsError } = await supabase
+                    .from('subtopics')
+                    .select('*')
+                    .eq('chapter_id', chapter.id)
+                    .order('name', { ascending: true });
+
+                  if (subtopicsError) {
+                    console.error('Error fetching subtopics for chapter', chapter.id, subtopicsError);
+                    return {
+                      id: chapter.id,
+                      name: chapter.name,
+                      progress: chapter.progress || 0,
+                      topics: []
+                    };
+                  }
+
+                  console.log(`Subtopics for chapter ${chapter.name}:`, subtopicsData);
+
+                  return {
+                    id: chapter.id,
+                    name: chapter.name,
+                    progress: chapter.progress || 0,
+                    topics: (subtopicsData || []).map((subtopic: any) => ({
+                      id: subtopic.id,
+                      name: subtopic.name,
+                      isCompleted: subtopic.is_completed || false,
+                      timeSpent: subtopic.time_spent || "0h 00m"
+                    }))
+                  };
+                })
+              );
 
               return {
                 id: subject.id,
@@ -129,10 +146,8 @@ const Index = () => {
       }
     };
 
-    if (selectedExamId) {
-      fetchSubjects();
-    }
-  }, [selectedExamId]);
+    fetchSubjects();
+  }, []);
 
   // Check for login success and show popup
   useEffect(() => {
