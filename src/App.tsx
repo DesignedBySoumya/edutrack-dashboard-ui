@@ -69,6 +69,7 @@ const App = () => {
                   <Dashboard />
                 </ProtectedRoute>
               } />
+
               <Route path="/timetable" element={
                 <ProtectedRoute>
                   <Timetable />

@@ -7,6 +7,7 @@ import { SummaryBox } from '@/components/SummaryBox';
 import { StudySession } from '@/components/StudySession';
 import { useToast } from '@/hooks/use-toast';
 import { Crown } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Topic {
   id: number;
@@ -37,88 +38,101 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState('2');
   const [activeTab, setActiveTab] = useState('all');
   const [activeStudySubject, setActiveStudySubject] = useState<Subject | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedExamId, setSelectedExamId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('selectedExamId');
+    return saved ? parseInt(saved) : null;
+  });
 
-  const [subjects, setSubjects] = useState<Subject[]>([
-    {
-      id: 1,
-      name: "Indian Polity and Governance",
-      progress: 11,
-      timeSpent: "06h 09m",
-      color: "blue",
-      isPlaying: false,
-      chapters: [
-        {
-          id: 1,
-          name: "Historical Background",
-          progress: 40,
-          topics: [
-            { id: 1, name: "Regulating Act 1773", isCompleted: true, timeSpent: "2h 30m" },
-            { id: 2, name: "Charter Act 1833", isCompleted: true, timeSpent: "1h 45m" },
-            { id: 3, name: "Government of India Act 1858", isCompleted: false }
-          ]
-        },
-        {
-          id: 2,
-          name: "Constitution Framing",
-          progress: 0,
-          topics: [
-            { id: 4, name: "Constituent Assembly", isCompleted: false },
-            { id: 5, name: "Drafting Committee", isCompleted: false },
-            { id: 6, name: "Key Features", isCompleted: false }
-          ]
+  // Fetch subjects from Supabase
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        setLoading(true);
+        
+        // Test exam table connection first
+        const { data: examData, error: examError } = await supabase
+          .from('exam')
+          .select('*')
+          .limit(5);
+
+        if (examError) {
+          console.error('Error connecting to exam table:', examError);
+        } else {
+          console.log('Exam table connected successfully. Available exams:', examData);
         }
-      ]
-    },
-    {
-      id: 2,
-      name: "Indian and World Geography",
-      progress: 8,
-      timeSpent: "9h 01m",
-      color: "green",
-      isPlaying: false,
-      chapters: [
-        {
-          id: 3,
-          name: "Physical Geography",
-          progress: 25,
-          topics: [
-            { id: 7, name: "Physiographic Divisions", isCompleted: true, timeSpent: "3h 00m" },
-            { id: 8, name: "Drainage System", isCompleted: false },
-            { id: 9, name: "Climate", isCompleted: false }
-          ]
-        },
-        {
-          id: 4,
-          name: "Human Geography",
-          progress: 0,
-          topics: [
-            { id: 10, name: "Population Distribution", isCompleted: false },
-            { id: 11, name: "Agricultural Patterns", isCompleted: false }
-          ]
+        
+        // First, get all subjects
+        const { data: subjectsData, error: subjectsError } = await supabase
+          .from('subjects')
+          .select('*')
+          .eq('exam_id', selectedExamId)
+          .order('name', { ascending: true });
+
+        if (subjectsError) {
+          console.error('Error fetching subjects:', subjectsError);
+          return;
         }
-      ]
-    },
-    {
-      id: 3,
-      name: "Indian Economy",
-      progress: 33,
-      timeSpent: "1h 00m",
-      color: "purple",
-      isPlaying: false,
-      chapters: [
-        {
-          id: 5,
-          name: "Basic Concepts",
-          progress: 60,
-          topics: [
-            { id: 12, name: "GDP vs GNP", isCompleted: true, timeSpent: "30m" },
-            { id: 13, name: "Inflation Types", isCompleted: true, timeSpent: "25m" },
-            { id: 14, name: "Monetary Policy", isCompleted: false }
-          ]
+
+        console.log('Subjects data:', subjectsData);
+
+        if (subjectsData) {
+          // For each subject, get its chapters
+          const subjectsWithChapters = await Promise.all(
+            subjectsData.map(async (subject: any) => {
+              const { data: chaptersData, error: chaptersError } = await supabase
+                .from('chapters')
+                .select('*')
+                .eq('subject_id', subject.id)
+                .order('name', { ascending: true });
+
+              if (chaptersError) {
+                console.error('Error fetching chapters for subject', subject.id, chaptersError);
+                return {
+                  id: subject.id,
+                  name: subject.name,
+                  progress: 0,
+                  timeSpent: "0h 00m",
+                  color: subject.color || "blue",
+                  isPlaying: false,
+                  chapters: []
+                };
+              }
+
+              // Map chapters with empty topics arrays (since topics table doesn't exist)
+              const chaptersWithTopics = (chaptersData || []).map((chapter: any) => ({
+                id: chapter.id,
+                name: chapter.name,
+                progress: chapter.progress || 0,
+                topics: [] // Empty topics array since topics table doesn't exist
+              }));
+
+              return {
+                id: subject.id,
+                name: subject.name,
+                progress: 0,
+                timeSpent: "0h 00m",
+                color: subject.color || "blue",
+                isPlaying: false,
+                chapters: chaptersWithTopics
+              };
+            })
+          );
+
+          setSubjects(subjectsWithChapters);
         }
-      ]
+      } catch (error) {
+        console.error('Error in fetchSubjects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (selectedExamId) {
+      fetchSubjects();
     }
-  ]);
+  }, [selectedExamId]);
 
   // Check for login success and show popup
   useEffect(() => {
@@ -209,7 +223,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter">
       {/* Header */}
-      <Header />
+      <Header selectedExamId={selectedExamId} onExamChange={setSelectedExamId} />
       
       {/* Date Timeline */}
       <DateTimeline selectedDate={selectedDate} onDateSelect={setSelectedDate} />
@@ -227,16 +241,22 @@ const Index = () => {
           
           {/* Subject Cards */}
           <div className="pb-4">
-            {subjects.map((subject) => (
-              <SubjectCard
-                key={subject.id}
-                subject={subject}
-                onPlayPause={handlePlayPause}
-                onAddTopic={handleAddTopic}
-                onToggleTopic={handleToggleTopic}
-                onUpdateSubject={handleUpdateSubject}
-              />
-            ))}
+            {loading ? (
+              <p className="text-center text-white">Loading subjects...</p>
+            ) : subjects.length === 0 ? (
+              <p className="text-center text-white">No subjects found. Add one!</p>
+            ) : (
+              subjects.map((subject) => (
+                <SubjectCard
+                  key={subject.id}
+                  subject={subject}
+                  onPlayPause={handlePlayPause}
+                  onAddTopic={handleAddTopic}
+                  onToggleTopic={handleToggleTopic}
+                  onUpdateSubject={handleUpdateSubject}
+                />
+              ))
+            )}
 
             {/* Add New Subject Button */}
             <div className="mx-6 mt-4">
