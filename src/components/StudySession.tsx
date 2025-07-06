@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RotateCcw, Play, Pause, SkipForward, Maximize, Music, Settings, ArrowLeft } from 'lucide-react';
+import { usePomodoroSession } from '@/hooks/usePomodoroSession';
 
 interface Subject {
   id: number;
@@ -12,30 +13,74 @@ interface Subject {
   chapters?: any[];
 }
 
+interface StudyStats {
+  timeSpentToday: number;
+  timeSpentTotal: number;
+  studyStreak: number;
+  completedChapters: number;
+  totalChapters: number;
+}
+
 interface StudySessionProps {
   subject: Subject;
   onBack: () => void;
+  studyStats?: StudyStats;
 }
 
-export const StudySession = ({ subject, onBack }: StudySessionProps) => {
+export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps) => {
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
-  const [isActive, setIsActive] = useState(false);
   const [sessionCount, setSessionCount] = useState(1);
   const [sessionType, setSessionType] = useState<'focused' | 'break'>('focused');
-  const [totalTimeToday, setTotalTimeToday] = useState(0);
+  const [totalTimeToday, setTotalTimeToday] = useState(studyStats?.timeSpentToday || 0);
   const [resetClickCount, setResetClickCount] = useState(0);
+  
+  // Use the Pomodoro session hook for database management
+  const {
+    activeSession,
+    elapsedTime,
+    isLoading: pomodoroLoading,
+    startSession,
+    endSession,
+    resetSession
+  } = usePomodoroSession();
 
+  // Check if there's an active session for this subject
+  const isActive = activeSession?.subjectId === subject.id;
+
+  // Prevent auto-resume by clearing any existing session for this subject
+  // Only run this once when component mounts, not when activeSession changes
+  useEffect(() => {
+    const clearExistingSession = async () => {
+      if (activeSession && activeSession.subjectId === subject.id) {
+        console.log('🔄 Clearing auto-resumed session to prevent auto-start');
+        await endSession();
+      }
+    };
+    clearExistingSession();
+  }, []); // Only run on mount, not when activeSession changes
+
+  // Update total time today when session is active
+  useEffect(() => {
+    if (isActive && elapsedTime > 0) {
+      setTotalTimeToday(studyStats?.timeSpentToday + elapsedTime);
+    }
+  }, [isActive, elapsedTime, studyStats?.timeSpentToday]);
+
+  // Auto-advance to next session when timer reaches 0
+  useEffect(() => {
+    if (isActive && timeLeft === 0) {
+      handleSkip();
+    }
+  }, [isActive, timeLeft]);
+
+  // Timer countdown effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
-        setTimeLeft(timeLeft => timeLeft - 1);
-        setTotalTimeToday(prev => prev + 1);
+        setTimeLeft(prev => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
-      // Auto-advance to next session
-      handleSkip();
     }
     
     return () => {
@@ -52,30 +97,43 @@ export const StudySession = ({ subject, onBack }: StudySessionProps) => {
   const formatTotalTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:00`;
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handlePlayPause = () => {
-    setIsActive(!isActive);
+  const handlePlayPause = async () => {
+    if (isActive) {
+      // Stop the session
+      console.log('⏸️ Stopping session');
+      await endSession();
+    } else {
+      // Start a new session
+      console.log('▶️ Starting new session for subject:', subject.name);
+      await startSession(subject.id, subject.name, sessionType);
+    }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (resetClickCount === 0) {
       setResetClickCount(1);
       setTimeout(() => setResetClickCount(0), 2000);
       setTimeLeft(sessionType === 'focused' ? 25 * 60 : 5 * 60);
-      setIsActive(false);
+      if (isActive) {
+        await endSession();
+      }
     } else {
       // Double reset - reset all
       setSessionCount(0);
       setTimeLeft(25 * 60);
-      setIsActive(false);
+      if (isActive) {
+        await endSession();
+      }
       setSessionType('focused');
       setResetClickCount(0);
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     if (sessionType === 'focused') {
       // Switch to break
       setSessionType('break');
@@ -86,7 +144,9 @@ export const StudySession = ({ subject, onBack }: StudySessionProps) => {
       setTimeLeft(25 * 60);
       setSessionCount(prev => prev + 1);
     }
-    setIsActive(false);
+    if (isActive) {
+      await endSession();
+    }
   };
 
   const progress = sessionType === 'focused' 
@@ -215,21 +275,44 @@ export const StudySession = ({ subject, onBack }: StudySessionProps) => {
           <div className="space-y-4 flex-1">
             <div className="bg-[#2a2a2f] p-4 rounded-lg border border-slate-700">
               <p className="text-xs text-orange-400 font-medium mb-1">Spent Today</p>
-              <p className="text-lg font-semibold text-white">{Math.floor(totalTimeToday / 60)}m</p>
+              <p className="text-lg font-semibold text-white">
+                {studyStats ? 
+                  (() => {
+                    const hours = Math.floor(studyStats.timeSpentToday / 3600);
+                    const minutes = Math.floor((studyStats.timeSpentToday % 3600) / 60);
+                    if (hours > 0) {
+                      return `${hours}h ${minutes}m`;
+                    } else {
+                      return `${minutes}m`;
+                    }
+                  })() : 
+                  `${Math.floor(totalTimeToday / 60)}m`
+                }
+              </p>
             </div>
             
             <div className="bg-[#2a2a2f] p-4 rounded-lg border border-slate-700">
               <p className="text-xs text-orange-400 font-medium mb-1">Spent Total</p>
-              <p className="text-lg font-semibold text-white">{subject.timeSpent}</p>
+              <p className="text-lg font-semibold text-white">
+                {studyStats ? 
+                  (() => {
+                    const hours = Math.floor(studyStats.timeSpentTotal / 3600);
+                    const minutes = Math.floor((studyStats.timeSpentTotal % 3600) / 60);
+                    if (hours > 0) {
+                      return `${hours}h ${minutes}m`;
+                    } else {
+                      return `${minutes}m`;
+                    }
+                  })() : 
+                  subject.timeSpent
+                }
+              </p>
             </div>
             
             <div className="bg-[#2a2a2f] p-4 rounded-lg border border-slate-700">
               <p className="text-xs text-orange-400 font-medium mb-1">Parts Done</p>
               <p className="text-lg font-semibold text-white">
-                {subject.chapters ? 
-                  `${subject.chapters.filter(ch => ch.progress > 0).length}/${subject.chapters.length}` : 
-                  '0/0'
-                }
+                {studyStats ? `${studyStats.completedChapters}/${studyStats.totalChapters}` : '0/0'}
               </p>
             </div>
           </div>
@@ -237,7 +320,9 @@ export const StudySession = ({ subject, onBack }: StudySessionProps) => {
           {/* Study Streak Footer */}
           <div className="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center text-sm">
             <span className="text-gray-400">Study Streak</span>
-            <span className="text-orange-400 font-medium">4 days</span>
+            <span className="text-orange-400 font-medium">
+              {studyStats ? `${studyStats.studyStreak} days` : '0 days'}
+            </span>
           </div>
         </div>
       </div>

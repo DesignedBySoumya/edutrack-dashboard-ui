@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { SubjectProgress } from './subject-card/SubjectProgress';
 import { ChapterSection } from './subject-card/ChapterSection';
@@ -49,6 +49,11 @@ export const SubjectCard = ({
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
   const [localSubject, setLocalSubject] = useState(subject);
   const [activeTopicId, setActiveTopicId] = useState<number | null>(null);
+
+  // Sync local state when subject prop changes (after database updates)
+  useEffect(() => {
+    setLocalSubject(subject);
+  }, [subject]);
 
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -125,36 +130,9 @@ export const SubjectCard = ({
   };
 
   const handleToggleTopic = (chapterId: number, topicId: number) => {
-    const updatedSubject = { ...localSubject };
-    const chapterIndex = updatedSubject.chapters?.findIndex(ch => ch.id === chapterId);
-    
-    if (chapterIndex !== undefined && chapterIndex >= 0 && updatedSubject.chapters) {
-      const topicIndex = updatedSubject.chapters[chapterIndex].topics.findIndex(t => t.id === topicId);
-      
-      if (topicIndex >= 0) {
-        updatedSubject.chapters[chapterIndex].topics[topicIndex].isCompleted = 
-          !updatedSubject.chapters[chapterIndex].topics[topicIndex].isCompleted;
-        
-        // Update chapter progress
-        const chapter = updatedSubject.chapters[chapterIndex];
-        const completedTopics = chapter.topics.filter(t => t.isCompleted).length;
-        chapter.progress = chapter.topics.length > 0 ? Math.round((completedTopics / chapter.topics.length) * 100) : 0;
-        
-        // Update overall subject progress
-        const totalTopics = updatedSubject.chapters.reduce((sum, ch) => sum + ch.topics.length, 0);
-        const totalCompleted = updatedSubject.chapters.reduce((sum, ch) => 
-          sum + ch.topics.filter(t => t.isCompleted).length, 0);
-        updatedSubject.progress = totalTopics > 0 ? Math.round((totalCompleted / totalTopics) * 100) : 0;
-        
-        setLocalSubject(updatedSubject);
-        
-        if (onToggleTopic) {
-          onToggleTopic(localSubject.id, chapterId, topicId);
-        }
-        if (onUpdateSubject) {
-          onUpdateSubject(updatedSubject);
-        }
-      }
+    // Don't update local state here - let the parent component handle it after database operation
+    if (onToggleTopic) {
+      onToggleTopic(localSubject.id, chapterId, topicId);
     }
   };
 

@@ -14,6 +14,9 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import AuthCallback from "./pages/AuthCallback";
+import StudySessionTest from "./pages/StudySessionTest";
+import PomodoroTest from "./pages/PomodoroTest";
+import PomodoroPage from "./pages/PomodoroPage";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
@@ -75,7 +78,37 @@ const App = () => {
                   <Timetable />
                 </ProtectedRoute>
               } />
+              <Route path="/timetable" element={
+                <ProtectedRoute>
+                  <Timetable />
+                </ProtectedRoute>
+              } />
+              <Route path="/timetable" element={
+                <ProtectedRoute>
+                  <Timetable />
+                </ProtectedRoute>
+              } />
+              <Route path="/timetable" element={
+                <ProtectedRoute>
+                  <Timetable />
+                </ProtectedRoute>
+              } />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/study-session-test" element={
+                <ProtectedRoute>
+                  <StudySessionTest />
+                </ProtectedRoute>
+              } />
+              <Route path="/pomodoro-test" element={
+                <ProtectedRoute>
+                  <PomodoroTest />
+                </ProtectedRoute>
+              } />
+              <Route path="/pomodoro" element={
+                <ProtectedRoute>
+                  <PomodoroPage />
+                </ProtectedRoute>
+              } />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route
