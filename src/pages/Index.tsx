@@ -44,6 +44,14 @@ const Index = () => {
     const saved = localStorage.getItem('selectedExamId');
     return saved ? parseInt(saved) : null;
   });
+  
+  // Summary statistics state
+  const [summaryStats, setSummaryStats] = useState({
+    totalSubjects: 0,
+    dueSubjects: 0,
+    completionPercentage: 0,
+    totalTimeSpent: "0h 00m"
+  });
 
 
 
@@ -188,6 +196,11 @@ const Index = () => {
           );
 
           setSubjects(subjectsWithChapters);
+          
+          // Calculate and update summary statistics
+          calculateSummaryStats(subjectsWithChapters).then(stats => {
+            setSummaryStats(stats);
+          });
         }
       } catch (error) {
         console.error('Error in fetchSubjects:', error);
@@ -198,6 +211,69 @@ const Index = () => {
 
     fetchSubjects();
   }, [selectedExamId]); // Re-fetch when exam selection changes
+
+  // Calculate summary statistics
+  const calculateSummaryStats = async (subjectsList: Subject[]) => {
+    const totalSubjects = subjectsList.length;
+    
+    // Calculate completion percentage based on all topics across all subjects
+    let totalTopics = 0;
+    let completedTopics = 0;
+    
+    subjectsList.forEach(subject => {
+      if (subject.chapters) {
+        subject.chapters.forEach(chapter => {
+          if (chapter.topics) {
+            totalTopics += chapter.topics.length;
+            completedTopics += chapter.topics.filter(topic => topic.isCompleted).length;
+          }
+        });
+      }
+    });
+    
+    const completionPercentage = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
+    
+    // Calculate due subjects (subjects with progress < 100%)
+    const dueSubjects = subjectsList.filter(subject => subject.progress < 100).length;
+    
+    // Fetch total time spent from study sessions
+    let totalTimeSpent = "0h 00m";
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (!userError && user) {
+        const { data: sessionsData, error: sessionsError } = await supabase
+          .from('user_daily_study_sessions')
+          .select('started_at, ended_at')
+          .eq('user_id', user.id)
+          .not('ended_at', 'is', null);
+
+        if (!sessionsError && sessionsData) {
+          let totalSeconds = 0;
+          sessionsData.forEach(session => {
+            if (session.started_at && session.ended_at) {
+              const startTime = new Date(session.started_at);
+              const endTime = new Date(session.ended_at);
+              const duration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+              totalSeconds += duration;
+            }
+          });
+          
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          totalTimeSpent = `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching total time spent:', error);
+    }
+    
+    return {
+      totalSubjects,
+      dueSubjects,
+      completionPercentage,
+      totalTimeSpent
+    };
+  };
 
 
 
@@ -315,8 +391,8 @@ const Index = () => {
         console.log(`🔍 Refetch Debug: Refetch error:`, refetchError);
 
         // Update local state to reflect the change and recalculate progress
-        setSubjects(prevSubjects => 
-          prevSubjects.map(s => {
+        setSubjects(prevSubjects => {
+          const updatedSubjects = prevSubjects.map(s => {
             if (s.id === subjectId) {
               const updatedChapters = s.chapters?.map(c => {
                 if (c.id === chapterId) {
@@ -354,8 +430,15 @@ const Index = () => {
               };
             }
             return s;
-          })
-        );
+          });
+          
+          // Update summary statistics after subject changes
+          calculateSummaryStats(updatedSubjects).then(stats => {
+            setSummaryStats(stats);
+          });
+          
+          return updatedSubjects;
+        });
 
         toast({
           title: "Progress Saved",
@@ -407,7 +490,14 @@ const Index = () => {
       <DateTimeline selectedDate={selectedDate} onDateSelect={setSelectedDate} />
       
       {/* Summary Box with Filters and Stats */}
-      <SummaryBox activeTab={activeTab} onTabChange={setActiveTab} />
+      <SummaryBox 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab}
+        totalSubjects={summaryStats.totalSubjects}
+        dueSubjects={summaryStats.dueSubjects}
+        completionPercentage={summaryStats.completionPercentage}
+        totalTimeSpent={summaryStats.totalTimeSpent}
+      />
       
       {/* Subject Cards */}
       <div className="pb-4">
@@ -416,16 +506,30 @@ const Index = () => {
         ) : subjects.length === 0 ? (
           <p className="text-center text-white">No subjects found. Add one!</p>
         ) : (
-          subjects.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject}
-              onPlayPause={handlePlayPause}
-              onAddTopic={handleAddTopic}
-              onToggleTopic={handleToggleTopic}
-              onUpdateSubject={handleUpdateSubject}
-            />
-          ))
+          subjects
+            .filter(subject => {
+              if (activeTab === 'all') return true;
+              if (activeTab === 'due') return subject.progress < 100;
+              return true;
+            })
+            .sort((a, b) => {
+              // When "Due" is selected, sort by progress in ascending order (0% to 100%)
+              if (activeTab === 'due') {
+                return a.progress - b.progress;
+              }
+              // For "All", keep original order
+              return 0;
+            })
+            .map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                onPlayPause={handlePlayPause}
+                onAddTopic={handleAddTopic}
+                onToggleTopic={handleToggleTopic}
+                onUpdateSubject={handleUpdateSubject}
+              />
+            ))
         )}
 
         {/* Add New Subject Button */}

@@ -16,7 +16,15 @@ interface SessionStats {
   currentStreak: number;
 }
 
-export const usePomodoroSession = () => {
+interface TimerSettings {
+  focusDuration: number;
+  breakDuration: number;
+  longBreakDuration: number;
+  autoStartNext: boolean;
+  soundNotifications: boolean;
+}
+
+export const usePomodoroSession = (timerSettings?: TimerSettings) => {
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [sessionStats, setSessionStats] = useState<SessionStats>({
