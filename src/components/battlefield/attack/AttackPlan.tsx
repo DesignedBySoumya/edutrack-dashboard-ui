@@ -1,13 +1,18 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Target, Clock, BookOpen } from "lucide-react";
+import { supabase } from '@/lib/supabaseClient';
 
-const AttackPlan = () => {
+interface AttackPlanProps {
+  examId?: number;
+}
+
+const AttackPlan = ({ examId }: AttackPlanProps) => {
   const navigate = useNavigate();
   const [battleConfig, setBattleConfig] = useState({
     subject: "",
@@ -17,18 +22,34 @@ const AttackPlan = () => {
     timeLimit: 30,
     questionCount: 20
   });
+  const [subjects, setSubjects] = useState([]);
+  const [topics, setTopics] = useState({});
 
-  const subjects = [
-    "Mathematics", "Physics", "Chemistry", "Biology", 
-    "English", "General Knowledge", "Reasoning", "Computer Science"
-  ];
-
-  const topics = {
-    Mathematics: ["Algebra", "Geometry", "Trigonometry", "Calculus", "Statistics"],
-    Physics: ["Mechanics", "Thermodynamics", "Optics", "Electricity", "Modern Physics"],
-    Chemistry: ["Organic", "Inorganic", "Physical Chemistry", "Environmental Chemistry"],
-    Biology: ["Botany", "Zoology", "Human Physiology", "Genetics", "Ecology"]
-  };
+  useEffect(() => {
+    const fetchSubjectsAndChapters = async () => {
+      const examIdToUse = examId || Number(localStorage.getItem('selectedExamId')) || 1;
+      const { data: subjectsData, error: subError } = await supabase.from('subjects').select('*').eq('exam_id', examIdToUse);
+      if (subError) {
+        console.error('Error loading subjects:', subError);
+        return;
+      }
+      setSubjects(subjectsData);
+      const topicsObj = {};
+      for (const subject of subjectsData) {
+        const { data: chapters, error: chapError } = await supabase
+          .from('chapters')
+          .select('*')
+          .eq('subject_id', subject.id);
+        if (chapError) {
+          console.error(`Error loading chapters for ${subject.name}:`, chapError);
+          continue;
+        }
+        topicsObj[subject.name] = chapters.map(ch => ch.name);
+      }
+      setTopics(topicsObj);
+    };
+    fetchSubjectsAndChapters();
+  }, [examId]);
 
   const sources = [
     "Coaching DPP", "Previous Year Papers", "Reference Books", 
@@ -52,7 +73,7 @@ const AttackPlan = () => {
         <div className="flex items-center justify-between mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/attack")}
+            onClick={() => navigate("/battlefield/attack")}
             className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -81,11 +102,15 @@ const AttackPlan = () => {
                       <SelectValue placeholder="Choose your battlefield" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-700 border-gray-600">
-                      {subjects.map(subject => (
-                        <SelectItem key={subject} value={subject} className="text-white hover:bg-gray-600">
-                          {subject}
-                        </SelectItem>
-                      ))}
+                      {subjects.length === 0 ? (
+                        <SelectItem value="no-subjects" disabled>No subjects found</SelectItem>
+                      ) : (
+                        subjects.map((subject: any) => (
+                          <SelectItem key={subject.name} value={subject.name} className="text-white hover:bg-gray-600">
+                            {subject.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -100,11 +125,15 @@ const AttackPlan = () => {
                       </SelectTrigger>
                       <SelectContent className="bg-gray-700 border-gray-600">
                         <SelectItem value="all" className="text-white hover:bg-gray-600">All Topics</SelectItem>
-                        {topics[battleConfig.subject]?.map(topic => (
-                          <SelectItem key={topic} value={topic} className="text-white hover:bg-gray-600">
-                            {topic}
-                          </SelectItem>
-                        ))}
+                        {(topics[battleConfig.subject] || []).length === 0 ? (
+                          <SelectItem value="no-topics" disabled>No topics found</SelectItem>
+                        ) : (
+                          (topics[battleConfig.subject] || []).map((topic: string) => (
+                            <SelectItem key={topic} value={topic} className="text-white hover:bg-gray-600">
+                              {topic}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

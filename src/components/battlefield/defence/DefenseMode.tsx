@@ -1,17 +1,18 @@
 import { useState } from "react";
 import WelcomePanel from "./WelcomePanel";
-import MissionSetup from "./MissionSetup";
 import SmartResourcesPanel from "./SmartResourcesPanel";
 import FocusRitual from "./FocusRitual";
 import EnhancedStudySession from "./EnhancedStudySession";
 import SessionLog from "./SessionLog";
 import ExitCheck from "./ExitCheck";
+import DefenseSetup from "./DefenseSetup";
 
 export type DefenseStep = 'welcome' | 'mission' | 'resources' | 'ritual' | 'study' | 'log' | 'exit';
 
 const DefenseMode = () => {
   const [currentStep, setCurrentStep] = useState<DefenseStep>('welcome');
   const [sessionData, setSessionData] = useState({
+    examId: Number(localStorage.getItem('selectedExamId')) || 1,
     subject: '',
     unit: '',
     topic: '',
@@ -61,7 +62,8 @@ const DefenseMode = () => {
           <WelcomePanel onNext={nextStep} />
         )}
         {currentStep === 'mission' && (
-          <MissionSetup 
+          <DefenseSetup
+            examId={sessionData.examId}
             sessionData={sessionData}
             updateSessionData={updateSessionData}
             onNext={nextStep}
