@@ -17,6 +17,7 @@ import AuthCallback from "./pages/AuthCallback";
 import StudySessionTest from "./pages/StudySessionTest";
 import PomodoroTest from "./pages/PomodoroTest";
 import PomodoroPage from "./pages/PomodoroPage";
+import FlipClockDemo from "./pages/FlipClockDemo";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
@@ -107,6 +108,11 @@ const App = () => {
               <Route path="/pomodoro" element={
                 <ProtectedRoute>
                   <PomodoroPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/flip-clock-demo" element={
+                <ProtectedRoute>
+                  <FlipClockDemo />
                 </ProtectedRoute>
               } />
               <Route path="/login" element={<LoginPage />} />

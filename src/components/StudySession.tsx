@@ -4,6 +4,8 @@ import { RotateCcw, Play, Pause, SkipForward, Maximize, Minimize, Music, Setting
 import { usePomodoroSession } from '@/hooks/usePomodoroSession';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
+// Remove the FlipClock import
+// import { FlipClock } from './FlipClock';
 
 interface Subject {
   id: number;
@@ -29,80 +31,7 @@ interface StudySessionProps {
   studyStats?: StudyStats;
 }
 
-// Flip Clock Components
-const AnimatedCard = ({ animation, digit }: { animation: string; digit: string }) => {
-  return(
-    <div className={`flipCard ${animation}`}>
-      <span>{digit}</span>
-    </div>
-  );
-};
 
-const StaticCard = ({ position, digit }: { position: string; digit: string }) => {
-  return(
-    <div className={position}>
-      <span>{digit}</span>
-    </div>
-  );
-};
-
-const FlipUnitContainer = ({ digit, shuffle, unit }: { digit: number; shuffle: boolean; unit: string }) => {	
-  // assign digit values
-  let currentDigit: number = digit;
-  let previousDigit: number = digit - 1;
-
-  // to prevent a negative value
-  if (unit !== 'hours') {
-    previousDigit = previousDigit === -1 
-      ? 59 
-      : previousDigit;
-  } else {
-    previousDigit = previousDigit === -1 
-      ? 23 
-      : previousDigit;
-  }
-
-  // add zero and convert to string
-  let currentDigitStr: string = currentDigit < 10 ? `0${currentDigit}` : currentDigit.toString();
-  let previousDigitStr: string = previousDigit < 10 ? `0${previousDigit}` : previousDigit.toString();
-
-  // shuffle digits
-  const digit1 = shuffle 
-    ? previousDigitStr 
-    : currentDigitStr;
-  const digit2 = !shuffle 
-    ? previousDigitStr 
-    : currentDigitStr;
-
-  // shuffle animations
-  const animation1 = shuffle 
-    ? 'fold' 
-    : 'unfold';
-  const animation2 = !shuffle 
-    ? 'fold' 
-    : 'unfold';
-
-  return(
-    <div className={'flipUnitContainer'}>
-      <StaticCard 
-        position={'upperCard'} 
-        digit={currentDigitStr} 
-      />
-      <StaticCard 
-        position={'lowerCard'} 
-        digit={previousDigitStr} 
-      />
-      <AnimatedCard 
-        digit={digit1}
-        animation={animation1}
-      />
-      <AnimatedCard 
-        digit={digit2}
-        animation={animation2}
-      />
-    </div>
-  );
-};
 
 export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps) => {
   const { toast } = useToast();
@@ -157,15 +86,11 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
   
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   
-  // Flip clock states
-  const [minutesFlip, setMinutesFlip] = useState(false);
-  const [secondsFlip, setSecondsFlip] = useState(false);
-  const [prevMinutes, setPrevMinutes] = useState(Math.floor(timerSettings.focusDuration));
-  const [prevSeconds, setPrevSeconds] = useState(0);
-  const [displayMinutes, setDisplayMinutes] = useState(Math.floor(timerSettings.focusDuration));
-  const [displaySeconds, setDisplaySeconds] = useState(0);
-  
   const [timeLeft, setTimeLeft] = useState(timerSettings.focusDuration * 60); // Use settings
+  
+  // Calculate current minutes and seconds for flip clock
+  const currentMinutes = Math.floor(timeLeft / 60);
+  const currentSeconds = timeLeft % 60;
   const [sessionCount, setSessionCount] = useState(1);
   const [sessionType, setSessionType] = useState<'focused' | 'break'>('focused');
   const [totalTimeToday, setTotalTimeToday] = useState(studyStats?.timeSpentToday || 0);
@@ -231,11 +156,6 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
               });
               if (!isActive) {
                 setTimeLeft(parsed.focusDuration * 60);
-                // Update display values for flip clock
-                setDisplayMinutes(parsed.focusDuration);
-                setDisplaySeconds(0);
-                setPrevMinutes(parsed.focusDuration);
-                setPrevSeconds(0);
               }
             } catch (error) {
               console.error('Error loading Pomodoro settings from localStorage:', error);
@@ -267,11 +187,6 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
               });
               if (!isActive) {
                 setTimeLeft(parsed.focusDuration * 60);
-                // Update display values for flip clock
-                setDisplayMinutes(parsed.focusDuration);
-                setDisplaySeconds(0);
-                setPrevMinutes(parsed.focusDuration);
-                setPrevSeconds(0);
               }
             } catch (error) {
               console.error('Error loading Pomodoro settings from localStorage:', error);
@@ -298,11 +213,6 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
           });
           if (!isActive) {
             setTimeLeft(settings.focusDuration * 60);
-            // Update display values for flip clock
-            setDisplayMinutes(settings.focusDuration);
-            setDisplaySeconds(0);
-            setPrevMinutes(settings.focusDuration);
-            setPrevSeconds(0);
           }
           
           // Also save to localStorage as backup
@@ -377,55 +287,16 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
     
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
-        setTimeLeft(prev => {
-          const newTime = prev - 1;
-          const newMinutes = Math.floor(newTime / 60);
-          const newSeconds = newTime % 60;
-          
-          // Handle minutes flip
-          if (newMinutes !== prevMinutes) {
-            setMinutesFlip(true);
-            setTimeout(() => {
-              setMinutesFlip(false);
-              setDisplayMinutes(newMinutes);
-              setPrevMinutes(newMinutes);
-            }, 600);
-          }
-          
-          // Handle seconds flip
-          if (newSeconds !== prevSeconds) {
-            setSecondsFlip(true);
-            setTimeout(() => {
-              setSecondsFlip(false);
-              setDisplaySeconds(newSeconds);
-              setPrevSeconds(newSeconds);
-            }, 600);
-          }
-          
-          return newTime;
-        });
+        setTimeLeft(prev => prev - 1);
       }, 1000);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, prevMinutes, prevSeconds]);
+  }, [isActive, timeLeft]);
 
-  // Update display values when timer changes manually (reset, skip, etc.)
-  useEffect(() => {
-    const currentMinutes = Math.floor(timeLeft / 60);
-    const currentSeconds = timeLeft % 60;
-    
-    if (!isActive) {
-      setDisplayMinutes(currentMinutes);
-      setDisplaySeconds(currentSeconds);
-      setPrevMinutes(currentMinutes);
-      setPrevSeconds(currentSeconds);
-      setMinutesFlip(false);
-      setSecondsFlip(false);
-    }
-  }, [timeLeft, isActive]);
+
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -1098,19 +969,10 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
             
             {/* Flip Clock Animation */}
             <div className="mb-16">
-              <div className="flipClock">
-                <FlipUnitContainer 
-                  unit={'minutes'}
-                  digit={displayMinutes} 
-                  shuffle={minutesFlip} 
-                />
-                <div className="text-8xl font-bold text-white mx-8">:</div>
-                <FlipUnitContainer 
-                  unit={'seconds'}
-                  digit={displaySeconds} 
-                  shuffle={secondsFlip} 
-                />
-              </div>
+              {/* The FlipClock component was removed, so this section is now empty */}
+              <p className="text-5xl font-bold text-white mb-2">
+                {formatTime(timeLeft)}
+              </p>
             </div>
             
             {/* Minimal Controls */}
@@ -1291,42 +1153,6 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
                   }`} />
                 </button>
               </div>
-
-              {/* Music Type Selection */}
-              <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg border border-slate-700">
-                <div className="flex items-center space-x-3">
-                  <CloudRain className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <label className="text-sm font-medium text-white">
-                      Music Type
-                    </label>
-                    <p className="text-xs text-gray-400">Choose background music</p>
-                  </div>
-                </div>
-                <select
-                  value={musicType}
-                  onChange={(e) => setMusicType(e.target.value as 'lofi' | 'rain' | 'custom')}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-orange-500"
-                >
-                  <option value="lofi">Lofi Study</option>
-                  <option value="rain">Rain Ambience</option>
-                  <option value="custom">Custom URL</option>
-                </select>
-              </div>
-
-              {/* Custom Music URL Input */}
-              {musicType === 'custom' && (
-                <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg border border-slate-700">
-                  <Link className="w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={customMusicUrl}
-                    onChange={(e) => setCustomMusicUrl(e.target.value)}
-                    placeholder="Enter custom music URL (e.g., https://example.com/music.mp3)"
-                    className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-orange-500"
-                  />
-                </div>
-              )}
             </div>
             
             <div className="flex space-x-3 mt-6">
@@ -1362,10 +1188,7 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
                         break_duration: validatedSettings.breakDuration,
                         long_break_duration: validatedSettings.longBreakDuration,
                         auto_start_next: validatedSettings.autoStartNext,
-                        sound_notifications: validatedSettings.soundNotifications,
-                        long_break_interval: 4, // Fixed at 4 sessions for now
-                        music_type: musicType,
-                        custom_music_url: musicType === 'custom' ? customMusicUrl : null
+                        sound_notifications: validatedSettings.soundNotifications
                       }, {
                         onConflict: 'user_id'
                       });
@@ -1402,10 +1225,8 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
         </div>
       )}
       
-      {/* Custom CSS for slider and flip clock */}
+      {/* Custom CSS for slider */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css?family=Droid+Sans+Mono');
-        
         .slider::-webkit-slider-thumb {
           appearance: none;
           height: 16px;
@@ -1422,146 +1243,6 @@ export const StudySession = ({ subject, onBack, studyStats }: StudySessionProps)
           background: #f97316;
           cursor: pointer;
           border: none;
-        }
-        
-        /* Flip Clock Animation */
-        .flipClock {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: 100%;
-          max-width: 800px;
-        }
-
-        .flipUnitContainer {
-          display: block;
-          position: relative;
-          width: 180px;
-          height: 150px;
-          perspective-origin: 50% 50%;
-          perspective: 400px;
-          background-color: #1a1a1a;
-          border-radius: 8px;
-          box-shadow: 0px 15px 25px -10px rgba(0,0,0,0.8);
-          margin: 0 15px;
-          border: 1px solid #333;
-        }
-
-        .upperCard, .lowerCard {
-          display: flex;
-          position: relative;
-          justify-content: center;
-          width: 100%;
-          height: 50%;
-          overflow: hidden;
-          border: 1px solid #333;
-        }
-
-        .upperCard span, .lowerCard span {
-          font-size: 6em;
-          font-family: 'Droid Sans Mono', monospace;
-          font-weight: lighter;
-          color: #fff;
-        }
-
-        .upperCard {
-          align-items: flex-end;
-          border-bottom: 0.5px solid #333;
-          border-top-left-radius: 8px;
-          border-top-right-radius: 8px;
-        }
-
-        .upperCard span {
-          transform: translateY(50%);
-        }
-
-        .lowerCard {
-          align-items: flex-start;
-          border-top: 0.5px solid #333;
-          border-bottom-left-radius: 8px;
-          border-bottom-right-radius: 8px;
-        }
-
-        .lowerCard span {
-          transform: translateY(-50%);
-        }
-
-        .flipCard {
-          display: flex;
-          justify-content: center;
-          position: absolute;
-          left: 0;
-          width: 100%;
-          height: 50%;
-          overflow: hidden;
-          backface-visibility: hidden;
-        }
-
-        .flipCard span {
-          font-family: 'Droid Sans Mono', monospace;
-          font-size: 6em;
-          font-weight: lighter;
-          color: #fff;
-        }
-
-        .flipCard.unfold {
-          top: 50%;
-          align-items: flex-start;
-          transform-origin: 50% 0%;
-          transform: rotateX(180deg);
-          background-color: #1a1a1a;
-          border-bottom-left-radius: 8px;
-          border-bottom-right-radius: 8px;
-          border: 0.5px solid #333;
-          border-top: 0.5px solid #333;
-        }
-
-        .flipCard.unfold span {
-          transform: translateY(-50%);
-        }
-
-        .flipCard.fold {
-          top: 0%;
-          align-items: flex-end;
-          transform-origin: 50% 100%;
-          transform: rotateX(0deg);
-          background-color: #1a1a1a;
-          border-top-left-radius: 8px;
-          border-top-right-radius: 8px;
-          border: 0.5px solid #333;
-          border-bottom: 0.5px solid #333;
-        }
-
-        .flipCard.fold span {
-          transform: translateY(50%);
-        }
-
-        .fold {
-          animation: fold 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
-          transform-style: preserve-3d;
-        }
-
-        .unfold {
-          animation: unfold 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
-          transform-style: preserve-3d;
-        }
-
-        @keyframes fold {
-          0% {
-            transform: rotateX(0deg);
-          }
-          100% {
-            transform: rotateX(-180deg);
-          }
-        }
-
-        @keyframes unfold {
-          0% {
-            transform: rotateX(180deg);
-          }
-          100% {
-            transform: rotateX(0deg);
-          }
         }
       `}</style>
     </div>
