@@ -22,6 +22,8 @@ const BeginBattle = () => {
     "Stay focused, warrior"
   );
   const onEnd = () => {
+    // Set flag to indicate user is coming from war route
+    localStorage.setItem('from_war_route', 'true');
     navigate("/battlefield/war/report/pts");
   };
   const motivationalMessages = [

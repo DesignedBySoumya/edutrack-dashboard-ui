@@ -365,7 +365,7 @@ const BattleAnalysis = () => {
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{subject.icon}</span>
                       <div>
-                        <CardTitle className="text-xl">{subject.name}</CardTitle>
+                        <CardTitle className="text-xl text-gray-900 dark:text-gray-100">{subject.name}</CardTitle>
                         <div className={`text-sm font-medium ${statusColor}`}>{stats.status}</div>
                       </div>
                     </div>
@@ -449,28 +449,28 @@ const BattleAnalysis = () => {
             </div>
             <div className="flex flex-wrap gap-3 mt-6">
               <Button 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-x-2 rounded focus-visible:ring-2 focus-visible:ring-blue-400"
                 onClick={() => navigate('/battlefield/war/report/weak-chapters')}
               >
-                <BookOpen className="w-4 h-4 mr-2" />
-                Revise Weak Chapters
+                <BookOpen className="w-5 h-5 text-white" />
+                <span className="text-white">Revise Weak Chapters</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="border-blue-600 text-blue-600"
+                className="border-purple-600 text-purple-600 bg-gray-50 flex items-center gap-x-2 rounded focus-visible:ring-2 focus-visible:ring-purple-400 hover:bg-purple-100"
                 onClick={() => navigate('/battlefield/war/report/pts')}
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Retry Mistakes
+                <RotateCcw className="w-5 h-5 text-purple-600" />
+                <span className="text-purple-600">Retry Mistakes</span>
               </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Battle Map */}
-        <Card className="mb-8">
+        <Card className="mb-8 bg-gray-50 dark:bg-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
               <Target className="w-6 h-6" />
               Battle Map Overview
             </CardTitle>
@@ -512,34 +512,34 @@ const BattleAnalysis = () => {
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
               onClick={handleViewFullReport}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-x-2 rounded focus-visible:ring-2 focus-visible:ring-purple-400"
             >
-              <Eye className="w-4 h-4 mr-2" />
-              View Full Report
+              <Eye className="w-5 h-5 text-white" />
+              <span className="text-white">View Full Report</span>
             </Button>
             <Button 
               variant="outline" 
-              className="border-purple-600 text-purple-600"
+              className="border-purple-600 text-purple-600 bg-gray-50 flex items-center gap-x-2 rounded focus-visible:ring-2 focus-visible:ring-purple-400"
               onClick={() => navigate('/battlefield/war/report/weak-chapters')}
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Retry Weak Areas
+              <RotateCcw className="w-5 h-5 text-purple-600" />
+              <span className="text-purple-600">Retry Weak Areas</span>
             </Button>
             <Button 
               variant="outline" 
-              className="border-purple-600 text-purple-600"
+              className="border-blue-600 text-blue-600 bg-gray-50 flex items-center gap-x-2 rounded focus-visible:ring-2 focus-visible:ring-blue-400"
               onClick={handleShare}
             >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share Report
+              <Share2 className="w-5 h-5 text-blue-600" />
+              <span className="text-blue-600">Share Report</span>
             </Button>
             <Button 
               variant="outline" 
-              className="border-purple-600 text-purple-600"
+              className="border-green-600 text-green-600 bg-gray-50 flex items-center gap-x-2 rounded focus-visible:ring-2 focus-visible:ring-green-400"
               onClick={handleDownload}
             >
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
+              <Download className="w-5 h-5 text-green-600" />
+              <span className="text-green-600">Download PDF</span>
             </Button>
           </div>
         </div>

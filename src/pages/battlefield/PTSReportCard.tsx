@@ -590,32 +590,12 @@ const PTSReportCard = () => {
     });
   };
 
+  // When the user clicks 'Add Mistakes to Flashcards', always navigate to /flashcards.
+  // The flashcards page should display:
+  // Heading: 'No more regret on silly mistakes'
+  // Description: 'Add all questions in flashcard to revise hard'
   const handleAddToFlashcards = () => {
-    const mistakes: any[] = [];
-    Object.entries(subjectData).forEach(([subjectKey, subject]) => {
-      subject.chapters.forEach((chapter: ChapterData) => {
-        if ((Number(chapter.incorrect) || 0) > 0 && chapter.whatWentWrong) {
-          mistakes.push({
-            subject: subject.name,
-            chapter: chapter.name,
-            mistakes: String(chapter.whatWentWrong),
-            learnings: String(chapter.learnings)
-          });
-        }
-      });
-    });
-    if (mistakes.length > 0) {
-      toast({
-        title: "🧠 Mistakes added to flashcards!",
-        description: `${mistakes.length} mistake(s) sent to your flashcard system`
-      });
-    } else {
-      toast({
-        title: "No mistakes found",
-        description: "Add some incorrect answers and 'What went wrong' notes first",
-        variant: "destructive"
-      });
-    }
+    navigate('/flashcards', { state: { from: '/battlefield/war/report/pts' } });
   };
 
   // Mock creation is now automatic on page load - no manual triggers needed
