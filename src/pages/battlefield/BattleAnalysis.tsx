@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Trophy, 
@@ -10,22 +9,24 @@ import {
   Clock, 
   TrendingUp, 
   RotateCcw, 
-  Share, 
+  Share2, 
   Download, 
   Eye,
   Star,
   Zap,
   Brain,
-  BookOpen
+  BookOpen,
+  AlertCircle,
+  ArrowLeft
 } from 'lucide-react';
 
 // Types for the data structure
 interface Chapter {
   name: string;
-  correct: number;
-  incorrect: number;
-  timeSpent: number;
-  marks: number;
+  correct: string | number;
+  incorrect: string | number;
+  timeSpent: string | number;
+  marks: string | number;
   whatWentWrong: string;
   learnings: string;
 }
@@ -34,6 +35,7 @@ interface Subject {
   name: string;
   icon: string;
   color: string;
+  maxMarks: number;
   chapters: Chapter[];
 }
 
@@ -50,6 +52,36 @@ interface StudentInfo {
   percentile: number;
 }
 
+// Enhanced Progress Bar Component
+const EnhancedProgressBar = ({ value, className = "", size = "neutral" }: { 
+  value: number; 
+  className?: string; 
+  size?: "subject" | "chapter" | "neutral";
+}) => {
+  const getProgressColor = (val: number) => {
+    if (val >= 80) return 'progress-excellent';
+    if (val >= 60) return 'progress-good';
+    return 'progress-needs-work';
+  };
+
+  const getHeight = () => {
+    switch (size) {
+      case "subject": return "h-3";
+      case "chapter": return "h-2";
+      default: return "h-2";
+    }
+  };
+
+  return (
+    <div className={`w-full bg-gray-200 rounded-full overflow-hidden ${getHeight()} ${className}`}>
+      <div
+        className={`h-full rounded-full transition-all duration-500 ease-out ${getProgressColor(value)}`}
+        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+      />
+    </div>
+  );
+};
+
 const BattleAnalysis = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -65,6 +97,15 @@ const BattleAnalysis = () => {
     percentile: 0
   };
 
+  // Helper function to safely convert string/number to number
+  const safeNumber = (value: string | number): number => {
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return value || 0;
+  };
+
   // Calculate overall statistics
   const calculateOverallStats = () => {
     let totalQuestions = 0;
@@ -75,11 +116,16 @@ const BattleAnalysis = () => {
 
     Object.values(reportData).forEach((subject) => {
       subject.chapters.forEach((chapter) => {
-        totalQuestions += chapter.correct + chapter.incorrect;
-        totalCorrect += chapter.correct;
-        totalIncorrect += chapter.incorrect;
-        totalTime += chapter.timeSpent;
-        totalMarks += chapter.marks;
+        const correct = safeNumber(chapter.correct);
+        const incorrect = safeNumber(chapter.incorrect);
+        const timeSpent = safeNumber(chapter.timeSpent);
+        const marks = safeNumber(chapter.marks);
+        
+        totalQuestions += correct + incorrect;
+        totalCorrect += correct;
+        totalIncorrect += incorrect;
+        totalTime += timeSpent;
+        totalMarks += marks;
       });
     });
 
@@ -99,12 +145,22 @@ const BattleAnalysis = () => {
 
   // Calculate subject-wise statistics
   const calculateSubjectStats = (chapters: Chapter[]) => {
-    const totalQuestions = chapters.reduce((sum, ch) => sum + ch.correct + ch.incorrect, 0);
-    const attempted = chapters.filter(ch => ch.correct + ch.incorrect > 0).length;
-    const totalCorrect = chapters.reduce((sum, ch) => sum + ch.correct, 0);
-    const totalIncorrect = chapters.reduce((sum, ch) => sum + ch.incorrect, 0);
-    const totalTime = chapters.reduce((sum, ch) => sum + ch.timeSpent, 0);
-    const totalMarks = chapters.reduce((sum, ch) => sum + ch.marks, 0);
+    const totalQuestions = chapters.reduce((sum, ch) => {
+      const correct = safeNumber(ch.correct);
+      const incorrect = safeNumber(ch.incorrect);
+      return sum + correct + incorrect;
+    }, 0);
+    
+    const attempted = chapters.filter(ch => {
+      const correct = safeNumber(ch.correct);
+      const incorrect = safeNumber(ch.incorrect);
+      return correct + incorrect > 0;
+    }).length;
+    
+    const totalCorrect = chapters.reduce((sum, ch) => sum + safeNumber(ch.correct), 0);
+    const totalIncorrect = chapters.reduce((sum, ch) => sum + safeNumber(ch.incorrect), 0);
+    const totalTime = chapters.reduce((sum, ch) => sum + safeNumber(ch.timeSpent), 0);
+    const totalMarks = chapters.reduce((sum, ch) => sum + safeNumber(ch.marks), 0);
     
     return {
       totalQuestions,
@@ -122,10 +178,13 @@ const BattleAnalysis = () => {
   };
 
   // Get performance status for a chapter
-  const getChapterStatus = (correct: number, incorrect: number) => {
-    const total = correct + incorrect;
+  const getChapterStatus = (correct: string | number, incorrect: string | number) => {
+    const correctNum = safeNumber(correct);
+    const incorrectNum = safeNumber(incorrect);
+    const total = correctNum + incorrectNum;
+    
     if (total === 0) return { text: 'Not Attempted', color: 'bg-gray-100 text-gray-800' };
-    const percentage = (correct / total) * 100;
+    const percentage = (correctNum / total) * 100;
     if (percentage >= 80) return { text: 'Excellent', color: 'bg-green-100 text-green-800' };
     if (percentage >= 60) return { text: 'Good', color: 'bg-yellow-100 text-yellow-800' };
     return { text: 'Needs Work', color: 'bg-red-100 text-red-800' };
@@ -173,8 +232,85 @@ const BattleAnalysis = () => {
     orange: 'bg-orange-50 border-orange-200'
   };
 
+  // Handle navigation back to PTS report
+  const handleViewFullReport = () => {
+    navigate('/battlefield/war/report/pts');
+  };
+
+  // Handle share functionality
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'PTS Mock Test Analysis',
+        text: `Check out my PTS mock test performance! Rank: #${studentInfo.rank}, Score: ${studentInfo.totalMarks}/${studentInfo.maxMarks}`,
+        url: window.location.href
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(`PTS Mock Test Analysis - Rank: #${studentInfo.rank}, Score: ${studentInfo.totalMarks}/${studentInfo.maxMarks}`);
+      alert('Analysis link copied to clipboard!');
+    }
+  };
+
+  // Handle download functionality
+  const handleDownload = () => {
+    // Placeholder for PDF download functionality
+    alert('PDF download feature coming soon!');
+  };
+
+  // Check if we have data
+  const hasData = Object.keys(reportData).length > 0;
+
+  if (!hasData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto text-center">
+          <CardContent className="p-8">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">No Data Available</h2>
+            <p className="text-gray-600 mb-6">
+              Please complete a mock test first to view the analysis.
+            </p>
+            <Button 
+              onClick={() => navigate('/battlefield/war/report/pts')}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go to Report Card
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+      <style>{`
+        /* Enhanced Progress Bar Styles */
+        .progress-excellent {
+          background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #6ee7b7 100%) !important;
+          animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        
+        .progress-good {
+          background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%) !important;
+        }
+        
+        .progress-needs-work {
+          background: linear-gradient(90deg, #ef4444 0%, #f87171 50%, #fca5a5 100%) !important;
+        }
+        
+        .progress-neutral {
+          background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%) !important;
+        }
+        
+        @keyframes pulse-glow {
+          0% { box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3); }
+          100% { box-shadow: 0 1px 8px rgba(16, 185, 129, 0.6); }
+        }
+      `}</style>
+
       {/* Victory Banner */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-8">
         <div className="container mx-auto px-4">
@@ -238,7 +374,7 @@ const BattleAnalysis = () => {
                       <div className="text-sm text-gray-600">Accuracy</div>
                     </div>
                   </div>
-                  <Progress value={stats.accuracy} className="h-3" />
+                  <EnhancedProgressBar value={stats.accuracy} size="subject" className="h-3" />
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -266,8 +402,10 @@ const BattleAnalysis = () => {
                     <div className="flex flex-wrap gap-2">
                       {subject.chapters.slice(0, 6).map((chapter, idx) => {
                         const status = getChapterStatus(chapter.correct, chapter.incorrect);
-                        const accuracy = chapter.correct + chapter.incorrect > 0 ? 
-                          Math.round((chapter.correct / (chapter.correct + chapter.incorrect)) * 100) : 0;
+                        const correct = safeNumber(chapter.correct);
+                        const incorrect = safeNumber(chapter.incorrect);
+                        const accuracy = correct + incorrect > 0 ? 
+                          Math.round((correct / (correct + incorrect)) * 100) : 0;
                         
                         return (
                           <Badge
@@ -310,11 +448,18 @@ const BattleAnalysis = () => {
               ))}
             </div>
             <div className="flex flex-wrap gap-3 mt-6">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => navigate('/battlefield/war/report/weak-chapters')}
+              >
                 <BookOpen className="w-4 h-4 mr-2" />
                 Revise Weak Chapters
               </Button>
-              <Button variant="outline" className="border-blue-600 text-blue-600">
+              <Button 
+                variant="outline" 
+                className="border-blue-600 text-blue-600"
+                onClick={() => navigate('/battlefield/war/report/pts')}
+              >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Retry Mistakes
               </Button>
@@ -366,23 +511,33 @@ const BattleAnalysis = () => {
         <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-purple-200 shadow-lg p-4 rounded-t-xl">
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
-              onClick={() => navigate('/battlefield/war/report/pts')}
+              onClick={handleViewFullReport}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               <Eye className="w-4 h-4 mr-2" />
               View Full Report
             </Button>
-            <Button variant="outline" className="border-purple-600 text-purple-600"
-            onClick={() => navigate('/battlefield/war/report/weak-chapters')}
+            <Button 
+              variant="outline" 
+              className="border-purple-600 text-purple-600"
+              onClick={() => navigate('/battlefield/war/report/weak-chapters')}
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Retry Weak Areas
             </Button>
-            <Button variant="outline" className="border-purple-600 text-purple-600">
-              <Share className="w-4 h-4 mr-2" />
+            <Button 
+              variant="outline" 
+              className="border-purple-600 text-purple-600"
+              onClick={handleShare}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
               Share Report
             </Button>
-            <Button variant="outline" className="border-purple-600 text-purple-600">
+            <Button 
+              variant="outline" 
+              className="border-purple-600 text-purple-600"
+              onClick={handleDownload}
+            >
               <Download className="w-4 h-4 mr-2" />
               Download PDF
             </Button>

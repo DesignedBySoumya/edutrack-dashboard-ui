@@ -71,29 +71,24 @@ const PTSReportCard = () => {
   // Debounce refs
   const debounceRefs = useRef<Record<string, NodeJS.Timeout>>({});
   const mockCreationPromise = useRef<Promise<string> | null>(null);
+  // Track if mock has been created in this session to prevent duplicates
+  const mockCreatedInSession = useRef<boolean>(false);
 
-  // Create or get mock test ID
+  // Create new mock test ID (only once per session)
   const ensureMockTest = useCallback(async (): Promise<string> => {
-    if (mockId) {
-      // Verify the mock_id actually exists in the database
-      const { data: existingMock } = await supabase
-        .from('mock_tests')
-        .select('id')
-        .eq('id', mockId)
-        .single();
-      
-      if (existingMock) {
-        return mockId;
-      } else {
-        console.log('Mock ID exists in state but not in database, creating new one');
-        setMockId(null);
-        localStorage.removeItem('mock_id');
-      }
+    // If there's already a creation in progress, wait for it
+    if (mockCreationPromise.current) {
+      return await mockCreationPromise.current;
     }
-    
-    // Check if we already have a mock_id in localStorage
+
+    // If we already have a mock_id and it was created in this session, return it
+    if (mockId && mockCreatedInSession.current) {
+      return mockId;
+    }
+
+    // Check if we have a mock_id from localStorage (from a previous session)
     const savedMockId = localStorage.getItem('mock_id');
-    if (savedMockId) {
+    if (savedMockId && !mockCreatedInSession.current) {
       // Verify the saved mock_id actually exists in the database
       const { data: mockData } = await supabase
         .from('mock_tests')
@@ -109,11 +104,6 @@ const PTSReportCard = () => {
         console.log('Saved mock_id not found in database, removing from localStorage');
         localStorage.removeItem('mock_id');
       }
-    }
-
-    // If there's already a creation in progress, wait for it
-    if (mockCreationPromise.current) {
-      return await mockCreationPromise.current;
     }
 
     // Create new mock test
@@ -217,6 +207,8 @@ const PTSReportCard = () => {
             
             if (testMock) {
               setMockId(testMockId);
+              // Mark as created in this session and save to localStorage
+              mockCreatedInSession.current = true;
               localStorage.setItem('mock_id', testMockId);
               toast({
                 title: 'Using Test Mock ID',
@@ -235,6 +227,8 @@ const PTSReportCard = () => {
         const newMockId = data.id;
         setMockId(newMockId);
         setMockTestInfo(data);
+        // Mark as created in this session and save to localStorage
+        mockCreatedInSession.current = true;
         localStorage.setItem('mock_id', newMockId);
         console.log('Mock test created:', newMockId);
         return newMockId;
@@ -287,14 +281,18 @@ const PTSReportCard = () => {
   // Auto-save chapter data to Supabase
   const saveChapterData = useCallback(async (subjectKey: string, chapterIndex: number, chapterData: ChapterData) => {
     try {
-      const mock_id = await ensureMockTest();
+      // Ensure we have a mock_id (should be created on page load)
+      if (!mockId) {
+        console.error('No mock_id available for saving chapter data');
+        return;
+      }
       
       // Set saving status for this specific chapter
       const chapterKey = `${subjectKey}-${chapterIndex}`;
       setSaveStatus(prev => ({ ...prev, [chapterKey]: 'saving' }));
 
       const chapterEntry = {
-        mock_id,
+        mock_id: mockId,
         chapter_id: chapterData.chapter_id,
         correct: Number(chapterData.correct) || 0,
         incorrect: Number(chapterData.incorrect) || 0,
@@ -311,7 +309,7 @@ const PTSReportCard = () => {
       if (error) throw error;
 
       // Update mock test analytics
-      await updateMockTestAnalytics(mock_id);
+      await updateMockTestAnalytics(mockId);
 
       // Set saved status
       setSaveStatus(prev => ({ ...prev, [chapterKey]: 'saved' }));
@@ -331,7 +329,7 @@ const PTSReportCard = () => {
         setSaveStatus(prev => ({ ...prev, [chapterKey]: 'idle' }));
       }, 3000);
     }
-  }, [ensureMockTest, updateMockTestAnalytics]);
+  }, [mockId, updateMockTestAnalytics]);
 
   // Debounced save function
   const debouncedSave = useCallback((subjectKey: string, chapterIndex: number, chapterData: ChapterData) => {
@@ -376,33 +374,28 @@ const PTSReportCard = () => {
         setIsLoading(true);
         
         // Check if user is coming from war route (end battle scenario)
+        // If so, clear any existing mock_id to ensure a fresh mock test
         const isFromWarRoute = localStorage.getItem('from_war_route') === 'true';
-        const shouldCreateNewMock = localStorage.getItem('create_new_mock') === 'true' || isFromWarRoute;
-        
-        if (shouldCreateNewMock) {
-          localStorage.removeItem('create_new_mock');
+        if (isFromWarRoute) {
           localStorage.removeItem('from_war_route');
           localStorage.removeItem('mock_id');
           setMockId(null);
           setMockTestInfo(null);
-          
-          // Automatically create new mock test
-          try {
-            await ensureMockTest();
-          } catch (error) {
-            console.error('Failed to create new mock test:', error);
-            toast({
-              title: 'Error',
-              description: 'Failed to create new mock test',
-              variant: 'destructive'
-            });
-          }
+          mockCreatedInSession.current = false;
+          console.log('Cleared existing mock data for fresh war session');
         }
         
-        // First, try to get existing mock_id
-        const savedMockId = localStorage.getItem('mock_id');
-        if (savedMockId && !shouldCreateNewMock) {
-          setMockId(savedMockId);
+        // Create a mock test only if one hasn't been created in this session
+        // This prevents duplicate creation on re-renders or hot reloads
+        try {
+          await ensureMockTest();
+        } catch (error) {
+          console.error('Failed to create new mock test:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to create new mock test',
+            variant: 'destructive'
+          });
         }
 
         // Fetch subjects and chapters structure
@@ -453,12 +446,13 @@ const PTSReportCard = () => {
 
         setSubjectData(finalSubjects);
 
-        // If we have a mock_id, load saved chapter data
-        if (savedMockId) {
+        // Load saved chapter data for the current mock_id (if any exists)
+        const currentMockId = mockId;
+        if (currentMockId) {
           const { data: savedChapters, error: loadError } = await supabase
             .from('mock_performance_by_chapter')
             .select('*')
-            .eq('mock_id', savedMockId);
+            .eq('mock_id', currentMockId);
 
           if (!loadError && savedChapters) {
             setSubjectData(prev => {
@@ -501,7 +495,15 @@ const PTSReportCard = () => {
     };
 
     loadData();
-  }, [toast]);
+  }, [toast, ensureMockTest, mockId]);
+
+  // Cleanup function to reset session flag when component unmounts
+  useEffect(() => {
+    return () => {
+      // Reset session flag on unmount
+      mockCreatedInSession.current = false;
+    };
+  }, []);
 
   // Calculate real-time analytics
   const calculateAnalytics = () => {
@@ -616,27 +618,59 @@ const PTSReportCard = () => {
     }
   };
 
-  // Function to trigger new mock creation (can be called from other components)
-  const triggerNewMockCreation = useCallback(() => {
-    localStorage.setItem('create_new_mock', 'true');
-    window.location.reload();
-  }, []);
+  // Mock creation is now automatic on page load - no manual triggers needed
 
-  // Function to trigger new mock creation from war route
-  const triggerNewMockFromWar = useCallback(() => {
-    localStorage.setItem('from_war_route', 'true');
-    window.location.reload();
-  }, []);
-
-  // Expose the functions globally for other components to use
-  useEffect(() => {
-    (window as any).triggerNewMockCreation = triggerNewMockCreation;
-    (window as any).triggerNewMockFromWar = triggerNewMockFromWar;
-    return () => {
-      delete (window as any).triggerNewMockCreation;
-      delete (window as any).triggerNewMockFromWar;
+  // Enhanced Progress Bar Component
+  const EnhancedProgressBar = ({ value, className = "", size = "neutral" }: { 
+    value: number; 
+    className?: string; 
+    size?: "subject" | "chapter" | "neutral";
+  }) => {
+    const getProgressColor = (val: number) => {
+      if (val >= 75) return "progress-excellent";
+      if (val >= 50) return "progress-good";
+      if (val > 0) return "progress-needs-work";
+      return "progress-neutral";
     };
-  }, [triggerNewMockCreation, triggerNewMockFromWar]);
+
+    const progressClass = size === "subject" ? "subject-progress" : "chapter-progress";
+    const colorClass = getProgressColor(value);
+    const width = Math.min(100, Math.max(0, value));
+
+    return (
+      <div 
+        className={`enhanced-progress ${progressClass} ${className}`}
+        style={{
+          background: 'linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 100%)',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          position: 'relative',
+          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)',
+          border: '1px solid rgba(0, 0, 0, 0.05)',
+          height: size === "subject" ? '8px' : '6px',
+          minWidth: size === "subject" ? '80px' : 'auto'
+        }}
+      >
+        <div 
+          className={`enhanced-progress-fill ${colorClass}`}
+          style={{ 
+            width: `${width}%`,
+            height: '100%',
+            background: colorClass === 'progress-excellent' ? 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #6ee7b7 100%)' :
+                       colorClass === 'progress-good' ? 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%)' :
+                       colorClass === 'progress-needs-work' ? 'linear-gradient(90deg, #ef4444 0%, #f87171 50%, #fca5a5 100%)' :
+                       'linear-gradient(90deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%)',
+            borderRadius: '12px',
+            transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            display: 'block'
+          }}
+        />
+      </div>
+    );
+  };
 
   // Get save status indicator
   const getSaveStatusIndicator = (subjectKey: string, chapterIndex: number) => {
@@ -676,6 +710,116 @@ const PTSReportCard = () => {
         }
         input[type=number] {
           -moz-appearance: textfield;
+        }
+        
+        /* Ensure proper contrast for all form inputs */
+        input, textarea {
+          color: #000000 !important;
+          background-color: #ffffff !important;
+        }
+        
+        /* Exception for rank input in dark header */
+        .bg-gradient-to-r input {
+          color: #ffffff !important;
+          background-color: transparent !important;
+        }
+        
+        /* Ensure placeholders are visible */
+        input::placeholder, textarea::placeholder {
+          color: #6b7280 !important;
+        }
+        
+        /* Focus states for better UX */
+        input:focus, textarea:focus {
+          outline: 2px solid #8b5cf6 !important;
+          outline-offset: 2px !important;
+        }
+        
+        /* Enhanced Progress Bar Styling */
+        .enhanced-progress {
+          background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+          position: relative !important;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+          border: 1px solid rgba(0, 0, 0, 0.05) !important;
+          height: auto !important;
+          min-height: 6px !important;
+        }
+        
+        .enhanced-progress-fill {
+          background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%) !important;
+          border-radius: 12px !important;
+          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease !important;
+          position: relative !important;
+          overflow: hidden !important;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+          height: 100% !important;
+          min-height: 6px !important;
+          display: block !important;
+        }
+        
+        .enhanced-progress:hover .enhanced-progress-fill {
+          transform: scaleY(1.1);
+        }
+        
+        .enhanced-progress-fill::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+          animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        
+        /* Subject-level progress bar (larger) */
+        .subject-progress {
+          height: 8px !important;
+          min-width: 80px !important;
+          max-width: 80px !important;
+        }
+        
+        /* Chapter-level progress bar (smaller) */
+        .chapter-progress {
+          height: 6px !important;
+          width: 100% !important;
+        }
+        
+        /* Consistent progress container heights */
+        .progress-container {
+          min-height: 32px;
+          display: flex;
+          align-items: center;
+        }
+        
+        /* Progress bar with different color schemes */
+        .progress-excellent {
+          background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #6ee7b7 100%) !important;
+          animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        
+        .progress-good {
+          background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%) !important;
+        }
+        
+        .progress-needs-work {
+          background: linear-gradient(90deg, #ef4444 0%, #f87171 50%, #fca5a5 100%) !important;
+        }
+        
+        .progress-neutral {
+          background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%) !important;
+        }
+        
+        @keyframes pulse-glow {
+          0% { box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3); }
+          100% { box-shadow: 0 1px 8px rgba(16, 185, 129, 0.6); }
         }
       `}</style>
 
@@ -791,12 +935,14 @@ const PTSReportCard = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <div className="text-sm text-gray-600">Progress</div>
-                            <div className="font-bold">{Math.round(stats.percentage)}%</div>
+                        <div className="flex items-center justify-end gap-4 min-w-[140px]">
+                          <div className="flex flex-col items-end justify-center">
+                            <div className="text-sm text-gray-600 leading-tight">Progress</div>
+                            <div className="font-bold text-lg leading-tight">{Math.round(stats.percentage)}%</div>
                           </div>
-                          <Progress value={stats.percentage} className="w-16" />
+                          <div className="flex items-center justify-center h-8">
+                            <EnhancedProgressBar value={stats.percentage} size="subject" className="w-20" />
+                          </div>
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -831,7 +977,7 @@ const PTSReportCard = () => {
                                       placeholder="e.g., 5" 
                                       value={chapter.correct} 
                                       onChange={e => updateChapterData(subjectKey, chapterIndex, 'correct', e.target.value)} 
-                                      className="w-full p-2 border border-gray-300 rounded text-center" 
+                                      className="w-full p-2 border border-gray-300 rounded text-center text-black bg-white" 
                                     />
                                   </div>
                                   <div>
@@ -842,7 +988,7 @@ const PTSReportCard = () => {
                                       placeholder="e.g., 2" 
                                       value={chapter.incorrect} 
                                       onChange={e => updateChapterData(subjectKey, chapterIndex, 'incorrect', e.target.value)} 
-                                      className="w-full p-2 border border-gray-300 rounded text-center" 
+                                      className="w-full p-2 border border-gray-300 rounded text-center text-black bg-white" 
                                     />
                                   </div>
                                   <div>
@@ -853,7 +999,7 @@ const PTSReportCard = () => {
                                       placeholder="e.g., 15" 
                                       value={chapter.timeSpent} 
                                       onChange={e => updateChapterData(subjectKey, chapterIndex, 'timeSpent', e.target.value)} 
-                                      className="w-full p-2 border border-gray-300 rounded text-center" 
+                                      className="w-full p-2 border border-gray-300 rounded text-center text-black bg-white" 
                                     />
                                   </div>
                                   <div>
@@ -864,19 +1010,21 @@ const PTSReportCard = () => {
                                       placeholder="e.g., 10" 
                                       value={chapter.marks} 
                                       onChange={e => updateChapterData(subjectKey, chapterIndex, 'marks', e.target.value)} 
-                                      className="w-full p-2 border border-gray-300 rounded text-center" 
+                                      className="w-full p-2 border border-gray-300 rounded text-center text-black bg-white" 
                                     />
                                   </div>
                                 </div>
                                 
                                 {/* Progress Bar */}
                                 {total > 0 && (
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-gray-600">Accuracy</span>
-                                      <span className="text-gray-800 font-medium">{percentage}%</span>
+                                  <div className="flex items-center justify-between gap-3 py-2">
+                                    <div className="flex flex-col">
+                                      <span className="text-sm text-gray-600 leading-tight">Accuracy</span>
+                                      <span className="text-sm text-gray-800 font-medium leading-tight">{percentage}%</span>
                                     </div>
-                                    <Progress value={percentage} className="h-3" />
+                                    <div className="flex items-center justify-center flex-1 max-w-[120px]">
+                                      <EnhancedProgressBar value={percentage} size="chapter" />
+                                    </div>
                                   </div>
                                 )}
                                 
@@ -887,7 +1035,7 @@ const PTSReportCard = () => {
                                     placeholder="Identify mistakes and areas of confusion..." 
                                     value={chapter.whatWentWrong} 
                                     onChange={e => updateChapterData(subjectKey, chapterIndex, 'whatWentWrong', e.target.value)} 
-                                    className="resize-none text-sm" 
+                                    className="resize-none text-sm text-black bg-white border-gray-300" 
                                     rows={2} 
                                   />
                                 </div>
@@ -899,7 +1047,7 @@ const PTSReportCard = () => {
                                     placeholder="What will you do differently next time?" 
                                     value={chapter.learnings} 
                                     onChange={e => updateChapterData(subjectKey, chapterIndex, 'learnings', e.target.value)} 
-                                    className="resize-none text-sm" 
+                                    className="resize-none text-sm text-black bg-white border-gray-300" 
                                     rows={2} 
                                   />
                                 </div>
@@ -965,18 +1113,7 @@ const PTSReportCard = () => {
               <BarChart3 className="w-5 h-5 mr-2" />
               Compare Mocks
             </Button>
-            <Button 
-              onClick={() => {
-                localStorage.removeItem('mock_id');
-                localStorage.removeItem('pts-report-data');
-                window.location.reload();
-              }} 
-              variant="outline" 
-              size="lg" 
-              className="border-orange-600 text-orange-600 px-6 py-3 bg-gray-50"
-            >
-              🗑️ Clear All Data
-            </Button>
+
 
           </div>
           
