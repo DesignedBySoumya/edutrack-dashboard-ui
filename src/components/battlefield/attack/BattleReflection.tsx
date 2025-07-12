@@ -19,7 +19,7 @@ const BattleReflection = () => {
         <Card className="bg-gray-800 border-gray-700">
           <CardContent className="p-8 text-center">
             <p className="text-gray-400 mb-4">No session data found</p>
-            <Button onClick={() => navigate("/attack")}>Back to Attack</Button>
+            <Button onClick={() => navigate("/battlefield/attack")}>Back to Attack</Button>
           </CardContent>
         </Card>
       </div>
@@ -59,7 +59,7 @@ const BattleReflection = () => {
   const performance = getPerformanceLevel();
 
   const generateBeastArsenal = () => {
-    navigate("/attack/arsenal", { state: { sessionData, reflections, insights } });
+    navigate("/battlefield/attack/arsenal", { state: { sessionData, reflections, insights } });
   };
 
   return (
@@ -69,14 +69,16 @@ const BattleReflection = () => {
         <div className="flex items-center justify-between mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/attack")}
+            onClick={() => navigate("/battlefield/attack")}
             className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Attack
           </Button>
-          <h1 className="text-3xl font-bold text-white">⚔️ Battle Reflection</h1>
-          <div></div>
+          <div className="flex-1 text-center">
+            <h1 className="text-3xl font-bold text-white">⚔️ Battle Reflection</h1>
+          </div>
+          <div className="w-[120px]"></div>
         </div>
 
         {/* Performance Overview */}
@@ -245,7 +247,7 @@ const BattleReflection = () => {
           </Button>
           <Button 
             variant="outline"
-            onClick={() => navigate("/attack/mental")}
+            onClick={() => navigate("/battlefield/attack/mental")}
             className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 py-4"
           >
             Battle Again ⚔️

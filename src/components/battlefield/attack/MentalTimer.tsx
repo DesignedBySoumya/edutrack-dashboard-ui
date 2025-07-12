@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
 import { ArrowLeft, Clock } from "lucide-react";
 
 interface TimingBenchmarks {
@@ -11,18 +12,23 @@ interface TimingBenchmarks {
   maximum: number;
 }
 
+interface QuestionData {
+  questionNumber: number;
+  timeSpent: number;
+  timestamp: Date;
+}
+
 const MentalTimer = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(20);
   const [isActive, setIsActive] = useState(false);
   const [time, setTime] = useState(0);
-  const [sessions, setSessions] = useLocalStorage("mentalSessions", []);
-  const [currentSession, setCurrentSession] = useState({
-    questions: [],
-    startTime: Date.now(),
-    source: "Manual"
-  });
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentSessionQuestions, setCurrentSessionQuestions] = useState<QuestionData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [timerStart, setTimerStart] = useState<number | null>(null);
 
   const benchmarks: TimingBenchmarks = {
     topper: 30,    // 30 seconds for toppers
@@ -40,47 +46,191 @@ const MentalTimer = () => {
     return () => clearInterval(interval);
   }, [isActive]);
 
-  const startTimer = () => {
-    setIsActive(true);
-    setTime(0);
-  };
-
-  const solveQuestion = () => {
-    setIsActive(false);
-    // Record the question timing
-    const questionData = {
-      questionNumber: currentQuestion,
-      timeSpent: time,
-      timestamp: Date.now()
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        if (isActive && !isLoading) {
+          solveQuestion();
+        } else if (!isActive && !isLoading) {
+          startTimer();
+        }
+      }
     };
-    
-    setCurrentSession(prev => ({
-      ...prev,
-      questions: [...prev.questions, questionData]
-    }));
 
-    if (currentQuestion < totalQuestions) {
-      setCurrentQuestion(prev => prev + 1);
-      setTime(0);
-    } else {
-      // Session complete
-      completeBattle();
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isActive, isLoading]);
+
+  const createSession = async () => {
+    if (!user) {
+      console.error("No user authenticated");
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('mental_battle_sessions')
+        .insert([
+          {
+            user_id: user.id,
+            source: 'Manual',
+            start_time: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating session:", error);
+        return null;
+      }
+
+      return data.id;
+    } catch (error) {
+      console.error("Error creating session:", error);
+      return null;
     }
   };
 
-  const completeBattle = () => {
-    const sessionData = {
-      ...currentSession,
-      endTime: Date.now(),
-      totalQuestions: currentQuestion,
-      averageTime: currentSession.questions.reduce((acc, q) => acc + q.timeSpent, 0) / currentSession.questions.length
-    };
-    
-    setSessions(prev => [...prev, sessionData]);
-    navigate("/attack/reflect", { state: { sessionData } });
+  const saveQuestion = async (questionData: QuestionData) => {
+    if (!sessionId) {
+      console.error("No session ID available");
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('mental_battle_questions')
+        .insert([
+          {
+            session_id: sessionId,
+            question_number: questionData.questionNumber,
+            time_spent: questionData.timeSpent,
+            timestamp: questionData.timestamp.toISOString()
+          }
+        ]);
+
+      if (error) {
+        console.error("Error saving question:", error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error saving question:", error);
+      return false;
+    }
   };
 
-  const skipQuestion = () => {
+  const updateSessionEnd = async () => {
+    if (!sessionId) {
+      console.error("No session ID available");
+      return false;
+    }
+
+    const averageTime = currentSessionQuestions.length > 0 
+      ? currentSessionQuestions.reduce((acc, q) => acc + q.timeSpent, 0) / currentSessionQuestions.length 
+      : 0;
+
+    try {
+      const { error } = await supabase
+        .from('mental_battle_sessions')
+        .update({
+          end_time: new Date().toISOString(),
+          total_questions: currentQuestion,
+          average_time: averageTime
+        })
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error("Error updating session:", error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error updating session:", error);
+      return false;
+    }
+  };
+
+  const startTimer = async () => {
+    setIsLoading(true);
+    
+    // Create session if this is the first question
+    if (currentQuestion === 1) {
+      const newSessionId = await createSession();
+      if (newSessionId) {
+        setSessionId(newSessionId);
+      } else {
+        setIsLoading(false);
+        return;
+      }
+    }
+    
+    setIsActive(true);
+    setTime(0);
+    setTimerStart(Date.now());
+    setIsLoading(false);
+  };
+
+  const solveQuestion = async () => {
+    // Capture the current time before stopping the timer
+    const timeSpent = Math.round((Date.now() - (timerStart || 0)) / 1000); // ensure integer
+    console.log('Saving question:', { questionNumber: currentQuestion, timeSpent });
+    setIsActive(false);
+    setIsLoading(true);
+    
+    // Record the question timing
+    const questionData: QuestionData = {
+      questionNumber: currentQuestion,
+      timeSpent: timeSpent,
+      timestamp: new Date()
+    };
+    
+    // Save to database
+    const saved = await saveQuestion(questionData);
+    if (saved) {
+      setCurrentSessionQuestions(prev => [...prev, questionData]);
+    }
+    
+    if (currentQuestion < totalQuestions) {
+      setCurrentQuestion(prev => prev + 1);
+      setTime(0);
+      setTimerStart(Date.now());
+    } else {
+      // Session complete
+      await completeBattle();
+    }
+    
+    setIsLoading(false);
+  };
+
+  const completeBattle = async () => {
+    setIsLoading(true);
+    
+    // Update session with end time and stats
+    await updateSessionEnd();
+    
+    // Prepare session data for reflection page
+    const sessionData = {
+      id: sessionId,
+      totalQuestions: currentQuestion,
+      averageTime: currentSessionQuestions.length > 0 
+        ? currentSessionQuestions.reduce((acc, q) => acc + q.timeSpent, 0) / currentSessionQuestions.length 
+        : 0,
+      questions: currentSessionQuestions,
+      startTime: new Date(),
+      endTime: new Date()
+    };
+    
+    navigate("/battlefield/attack/reflect", { state: { sessionData } });
+    setIsLoading(false);
+  };
+
+  const skipQuestion = async () => {
     if (currentQuestion < totalQuestions) {
       setCurrentQuestion(prev => prev + 1);
       setTime(0);
@@ -103,6 +253,12 @@ const MentalTimer = () => {
 
   const timingStatus = getTimingStatus();
 
+  // Redirect if not authenticated
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-6">
       <div className="max-w-4xl mx-auto">
@@ -110,8 +266,9 @@ const MentalTimer = () => {
         <div className="flex items-center justify-between mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/attack")}
+            onClick={() => navigate("/battlefield/attack")}
             className="text-gray-400 hover:text-white"
+            disabled={isLoading}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Attack
@@ -183,15 +340,17 @@ const MentalTimer = () => {
                 <Button 
                   onClick={startTimer}
                   className="w-full bg-red-600 hover:bg-red-700 text-white py-4 text-xl"
+                  disabled={isLoading}
                 >
-                  🎯 Start Solving Question {currentQuestion}
+                  {isLoading ? "🔄 Creating Session..." : `🎯 Start Solving Question ${currentQuestion}`}
                 </Button>
               ) : (
                 <Button 
                   onClick={solveQuestion}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-2xl"
+                  disabled={isLoading}
                 >
-                  ✅ SOLVED IT! (Press SPACE)
+                  {isLoading ? "🔄 Saving..." : "✅ SOLVED IT! (Press SPACE)"}
                 </Button>
               )}
 
@@ -200,6 +359,7 @@ const MentalTimer = () => {
                   variant="outline" 
                   onClick={skipQuestion}
                   className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  disabled={isLoading}
                 >
                   Skip ⏭
                 </Button>
@@ -207,6 +367,7 @@ const MentalTimer = () => {
                   variant="outline" 
                   onClick={completeBattle}
                   className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  disabled={isLoading}
                 >
                   End Battle 🔔
                 </Button>
@@ -216,7 +377,7 @@ const MentalTimer = () => {
         </Card>
 
         {/* Session Stats */}
-        {currentSession.questions.length > 0 && (
+        {currentSessionQuestions.length > 0 && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-lg text-white flex items-center gap-2">
@@ -228,19 +389,19 @@ const MentalTimer = () => {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-white">
-                    {Math.round(currentSession.questions.reduce((acc, q) => acc + q.timeSpent, 0) / currentSession.questions.length) || 0}s
+                    {Math.round(currentSessionQuestions.reduce((acc, q) => acc + q.timeSpent, 0) / currentSessionQuestions.length) || 0}s
                   </div>
                   <div className="text-sm text-gray-400">Avg Time</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-500">
-                    {currentSession.questions.filter(q => q.timeSpent <= benchmarks.topper).length}
+                    {currentSessionQuestions.filter(q => q.timeSpent <= benchmarks.topper).length}
                   </div>
                   <div className="text-sm text-gray-400">Beast Mode</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-red-500">
-                    {currentSession.questions.filter(q => q.timeSpent > benchmarks.maximum).length}
+                    {currentSessionQuestions.filter(q => q.timeSpent > benchmarks.maximum).length}
                   </div>
                   <div className="text-sm text-gray-400">Too Slow</div>
                 </div>
