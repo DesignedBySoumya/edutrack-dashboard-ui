@@ -79,7 +79,7 @@ const BeastArsenal = () => {
           <div className="flex items-center justify-between mb-6">
             <Button 
               variant="ghost" 
-              onClick={() => navigate("/attack/reflect", { state: { sessionData } })}
+              onClick={() => navigate("/battlefield/attack/reflect", { state: { sessionData } })}
               className="text-gray-400 hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -281,14 +281,14 @@ const BeastArsenal = () => {
         {!isPrintView && (
           <div className="flex gap-4">
             <Button 
-              onClick={() => navigate("/attack/mental")}
+              onClick={() => navigate("/battlefield/attack/mental")}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white py-4"
             >
               🔥 Start New Battle
             </Button>
             <Button 
               variant="outline"
-              onClick={() => navigate("/attack")}
+              onClick={() => navigate("/battlefield/attack")}
               className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700 py-4"
             >
               Back to Attack Hub

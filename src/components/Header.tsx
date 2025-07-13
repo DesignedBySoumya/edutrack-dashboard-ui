@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronDown, Calendar, Settings, Share } from 'lucide-react';
 import { ExamDropdown } from './ExamDropdown';
 
@@ -23,10 +23,10 @@ export const Header = ({ selectedExamId, onExamChange }: HeaderProps) => {
   });
 
   const handleCalendarClick = () => {
-    if (location.pathname === '/timetable') {
+    if (location.pathname === '/calendar') {
       navigate('/');
     } else {
-      navigate('/timetable');
+      navigate('/calendar');
     }
   };
 
@@ -64,7 +64,7 @@ export const Header = ({ selectedExamId, onExamChange }: HeaderProps) => {
         <div className="flex items-center space-x-3">
           <button onClick={handleCalendarClick}>
             <Calendar className={`w-5 h-5 cursor-pointer transition-colors ${
-              location.pathname === '/timetable' 
+              location.pathname === '/calendar' 
                 ? 'text-blue-400' 
                 : 'text-gray-400 hover:text-white'
             }`} />
@@ -76,7 +76,9 @@ export const Header = ({ selectedExamId, onExamChange }: HeaderProps) => {
                 : 'text-gray-400 hover:text-white'
             }`} />
           </button>
-          <Share className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+          <Link to="/share">
+            <Share className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+          </Link>
         </div>
       </div>
     </div>

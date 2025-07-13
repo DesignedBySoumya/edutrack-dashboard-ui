@@ -2,58 +2,91 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { Calendar, Flame, Trophy, Target } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { BattleAnalyticsService } from "@/lib/battleAnalyticsService";
+import { Calendar, Flame, Trophy, Target, Loader2 } from "lucide-react";
 
 const StreakTracker = () => {
-  const [sessions] = useLocalStorage("mentalSessions", []);
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [streakData, setStreakData] = useState({
+    currentStreak: 0,
+    longestStreak: 0,
+    sessionDates: [] as string[],
+    totalSessions: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getStreakData = () => {
-    const sessionDates = sessions.map(s => new Date(s.startTime).toDateString());
-    const uniqueDates = [...new Set(sessionDates)];
-    
-    let currentStreak = 0;
-    let longestStreak = 0;
-    
-    // Calculate current streak
-    const today = new Date();
-    let checkDate = new Date(today);
-    
-    while (uniqueDates.includes(checkDate.toDateString())) {
-      currentStreak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    }
-    
-    // If no session today, check if yesterday had one
-    if (currentStreak === 0 && uniqueDates.includes(new Date(today.getTime() - 86400000).toDateString())) {
-      checkDate = new Date(today.getTime() - 86400000);
-      while (uniqueDates.includes(checkDate.toDateString())) {
-        currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      }
-    }
-    
-    // Calculate longest streak
-    const sortedDates = uniqueDates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-    let tempStreak = 1;
-    
-    for (let i = 1; i < sortedDates.length; i++) {
-      const prevDate = new Date(sortedDates[i - 1]);
-      const currDate = new Date(sortedDates[i]);
-      const diffDays = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+  useEffect(() => {
+    const fetchStreakData = async () => {
+      if (!user?.id) return;
       
-      if (diffDays === 1) {
-        tempStreak++;
-      } else {
-        longestStreak = Math.max(longestStreak, tempStreak);
-        tempStreak = 1;
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const analyticsService = new BattleAnalyticsService(user.id);
+        const mergedSessions = await analyticsService.getMergedSessionData();
+        
+        // Get unique dates from all sessions
+        const uniqueDates = [...new Set(
+          mergedSessions.map(session => new Date(session.startTime).toDateString())
+        )].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+        let currentStreak = 0;
+        let longestStreak = 0;
+        let tempStreak = 0;
+
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+        // Calculate current streak
+        if (uniqueDates.includes(today) || uniqueDates.includes(yesterday)) {
+          for (let i = 0; i < uniqueDates.length; i++) {
+            const date = new Date(uniqueDates[i]);
+            const expectedDate = new Date();
+            expectedDate.setDate(expectedDate.getDate() - i);
+            
+            if (date.toDateString() === expectedDate.toDateString()) {
+              currentStreak++;
+            } else {
+              break;
+            }
+          }
+        }
+
+        // Calculate longest streak
+        for (let i = 0; i < uniqueDates.length - 1; i++) {
+          const current = new Date(uniqueDates[i]);
+          const next = new Date(uniqueDates[i + 1]);
+          const diffDays = (current.getTime() - next.getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (diffDays <= 1) {
+            tempStreak++;
+          } else {
+            longestStreak = Math.max(longestStreak, tempStreak + 1);
+            tempStreak = 0;
+          }
+        }
+        longestStreak = Math.max(longestStreak, tempStreak + 1);
+
+        setStreakData({
+          currentStreak,
+          longestStreak,
+          sessionDates: uniqueDates,
+          totalSessions: mergedSessions.length
+        });
+      } catch (err) {
+        console.error('Error fetching streak data:', err);
+        setError('Failed to load streak data');
+      } finally {
+        setLoading(false);
       }
-    }
-    longestStreak = Math.max(longestStreak, tempStreak);
-    
-    return { currentStreak, longestStreak, sessionDates: uniqueDates };
-  };
+    };
+
+    fetchStreakData();
+  }, [user?.id]);
 
   const getCalendarDays = () => {
     const year = currentDate.getFullYear();
@@ -74,7 +107,6 @@ const StreakTracker = () => {
     return days;
   };
 
-  const streakData = getStreakData();
   const calendarDays = getCalendarDays();
 
   const getStreakLevel = (streak: number) => {
@@ -87,6 +119,40 @@ const StreakTracker = () => {
 
   const currentLevel = getStreakLevel(streakData.currentStreak);
   const nextLevel = getStreakLevel(streakData.currentStreak + 1);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="w-16 h-16 mx-auto mb-4 text-gray-400 animate-spin" />
+            <h3 className="text-xl font-bold text-white mb-2">Loading Streak Data</h3>
+            <p className="text-gray-400">Fetching your battle history...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-8 text-center">
+            <Flame className="w-16 h-16 mx-auto mb-4 text-red-400" />
+            <h3 className="text-xl font-bold text-white mb-2">Error Loading Data</h3>
+            <p className="text-gray-400 mb-4">{error}</p>
+            <button 
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -146,7 +212,7 @@ const StreakTracker = () => {
         <Card className="bg-gray-800 border-gray-700">
           <CardContent className="p-6 text-center">
             <Target className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-            <div className="text-2xl font-bold text-white">{sessions.length}</div>
+            <div className="text-2xl font-bold text-white">{streakData.totalSessions}</div>
             <div className="text-sm text-gray-400">Total Sessions</div>
           </CardContent>
         </Card>

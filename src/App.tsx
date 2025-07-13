@@ -8,7 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import Timetable from "./pages/Timetable";
+import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
@@ -21,6 +21,7 @@ import FlipClockDemo from "./pages/FlipClockDemo";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
+import SharePage from './pages/Share';
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,8 @@ const ReviewWeakChapters = lazy(
 );
 const CompareMocks = lazy(() => import("./pages/battlefield/CompareMocks"));
 const BattleAnalysis = lazy(() => import("./pages/battlefield/BattleAnalysis"));
+const Analytics = lazy(() => import("./pages/battlefield/Analytics"));
+const StreakTrackerPage = lazy(() => import("./pages/battlefield/StreakTrackerPage"));
 
 const App = () => {
   const { isAuthenticated, user } = useAuth();
@@ -74,24 +77,9 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
-              <Route path="/timetable" element={
+              <Route path="/calendar" element={
                 <ProtectedRoute>
-                  <Timetable />
-                </ProtectedRoute>
-              } />
-              <Route path="/timetable" element={
-                <ProtectedRoute>
-                  <Timetable />
-                </ProtectedRoute>
-              } />
-              <Route path="/timetable" element={
-                <ProtectedRoute>
-                  <Timetable />
-                </ProtectedRoute>
-              } />
-              <Route path="/timetable" element={
-                <ProtectedRoute>
-                  <Timetable />
+                  <Calendar />
                 </ProtectedRoute>
               } />
               <Route path="/settings" element={<Settings />} />
@@ -117,6 +105,7 @@ const App = () => {
               } />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/share" element={<SharePage />} />
               <Route
                 path="/flashcards"
                 element={
@@ -225,6 +214,26 @@ const App = () => {
                   <ProtectedRoute>
                     <Suspense fallback={<div>Loading...</div>}>
                       <BattleAnalysis />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/attack/analytics"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Analytics />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/battlefield/attack/streaks"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <StreakTrackerPage />
                     </Suspense>
                   </ProtectedRoute>
                 }

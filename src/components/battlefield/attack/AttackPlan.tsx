@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target, Clock, BookOpen } from "lucide-react";
+import { ArrowLeft, Target, Clock, BookOpen, Database, AlertCircle } from "lucide-react";
 import { supabase } from '@/lib/supabaseClient';
+import { QuestionsService, BattleConfig } from '@/lib/questionsService';
 
 interface AttackPlanProps {
   examId?: number;
@@ -14,7 +15,7 @@ interface AttackPlanProps {
 
 const AttackPlan = ({ examId }: AttackPlanProps) => {
   const navigate = useNavigate();
-  const [battleConfig, setBattleConfig] = useState({
+  const [battleConfig, setBattleConfig] = useState<BattleConfig>({
     subject: "",
     topic: "",
     source: "",
@@ -24,6 +25,9 @@ const AttackPlan = ({ examId }: AttackPlanProps) => {
   });
   const [subjects, setSubjects] = useState([]);
   const [topics, setTopics] = useState({});
+  const [questionStats, setQuestionStats] = useState<any>(null);
+  const [availableQuestions, setAvailableQuestions] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchSubjectsAndChapters = async () => {
@@ -51,6 +55,40 @@ const AttackPlan = ({ examId }: AttackPlanProps) => {
     fetchSubjectsAndChapters();
   }, [examId]);
 
+  // Fetch question stats when subject changes
+  useEffect(() => {
+    const fetchQuestionStats = async () => {
+      if (!battleConfig.subject) {
+        setQuestionStats(null);
+        setAvailableQuestions(0);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const examIdToUse = examId || Number(localStorage.getItem('selectedExamId')) || 1;
+        const subjectData = subjects.find((s: any) => s.name === battleConfig.subject);
+        
+        if (subjectData) {
+          const stats = await QuestionsService.getQuestionStats(subjectData.id, examIdToUse);
+          setQuestionStats(stats);
+          
+          // Calculate available questions based on current config
+          const questions = await QuestionsService.getQuestionsForBattle(battleConfig, examIdToUse);
+          setAvailableQuestions(questions.length);
+        }
+      } catch (error) {
+        console.error('Error fetching question stats:', error);
+        setQuestionStats(null);
+        setAvailableQuestions(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestionStats();
+  }, [battleConfig.subject, battleConfig.topic, battleConfig.difficulty, battleConfig.source, subjects, examId]);
+
   const sources = [
     "Coaching DPP", "Previous Year Papers", "Reference Books", 
     "Online Platform", "YouTube Videos", "Custom Questions"
@@ -58,11 +96,11 @@ const AttackPlan = ({ examId }: AttackPlanProps) => {
 
   const difficulties = ["Easy", "Medium", "Hard", "Mixed"];
 
-  const isConfigComplete = battleConfig.subject && battleConfig.source && battleConfig.difficulty;
+  const isConfigComplete = battleConfig.subject && battleConfig.source && battleConfig.difficulty && availableQuestions > 0;
 
   const startBattle = () => {
     if (isConfigComplete) {
-      navigate("/attack/battle", { state: { battleConfig } });
+      navigate("/battlefield/attack/battle", { state: { battleConfig } });
     }
   };
 
@@ -292,6 +330,89 @@ const AttackPlan = ({ examId }: AttackPlanProps) => {
               </CardContent>
             </Card>
 
+            {/* Question Availability */}
+            {battleConfig.subject && (
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <Database className="w-5 h-5" />
+                    Question Database
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto"></div>
+                      <p className="text-gray-400 mt-2">Loading questions...</p>
+                    </div>
+                  ) : questionStats ? (
+                    <div className="space-y-4">
+                      {/* Available Questions */}
+                      <div className="text-center p-4 bg-gray-700 rounded-lg">
+                        <div className="text-2xl font-bold text-white">{availableQuestions}</div>
+                        <div className="text-sm text-gray-400">Available Questions</div>
+                        {availableQuestions < battleConfig.questionCount && (
+                          <div className="flex items-center justify-center gap-2 mt-2 text-yellow-400">
+                            <AlertCircle className="w-4 h-4" />
+                            <span className="text-xs">Not enough questions for {battleConfig.questionCount} battle</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Question Stats */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">By Difficulty</h4>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-400">Easy:</span>
+                              <span className="text-white">{questionStats.byDifficulty.Easy}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-yellow-400">Medium:</span>
+                              <span className="text-white">{questionStats.byDifficulty.Medium}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-red-400">Hard:</span>
+                              <span className="text-white">{questionStats.byDifficulty.Hard}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-300 mb-2">By Source</h4>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-blue-400">PYQ:</span>
+                              <span className="text-white">{questionStats.bySource.PYQ}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-purple-400">Book:</span>
+                              <span className="text-white">{questionStats.bySource.Book}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-orange-400">Coaching:</span>
+                              <span className="text-white">{questionStats.bySource.Coaching}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Total Questions */}
+                      <div className="text-center p-3 bg-gray-700 rounded-lg">
+                        <div className="text-lg font-bold text-white">{questionStats.total}</div>
+                        <div className="text-sm text-gray-400">Total Questions in Database</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400">No questions available for this subject</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Start Battle Button */}
             <Button 
               onClick={startBattle}
@@ -307,7 +428,9 @@ const AttackPlan = ({ examId }: AttackPlanProps) => {
 
             {!isConfigComplete && (
               <p className="text-center text-sm text-gray-400">
-                Please select subject, source, and difficulty to continue
+                {availableQuestions === 0 && battleConfig.subject 
+                  ? "No questions available for this configuration" 
+                  : "Please select subject, source, and difficulty to continue"}
               </p>
             )}
           </div>

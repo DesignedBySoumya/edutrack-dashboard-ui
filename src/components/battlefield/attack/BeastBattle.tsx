@@ -6,12 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Clock, Target, CheckCircle } from "lucide-react";
+import { ArrowLeft, Clock, Target, CheckCircle, AlertCircle } from "lucide-react";
+import { QuestionsService, BattleConfig } from '@/lib/questionsService';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BeastBattle = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const battleConfig = location.state?.battleConfig;
+  const { user } = useAuth();
+  const battleConfig: BattleConfig = location.state?.battleConfig;
 
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [selectedAnswer, setSelectedAnswer] = useState("");
@@ -24,28 +28,57 @@ const BeastBattle = () => {
     startTime: Date.now(),
     config: battleConfig
   });
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [battleStartedAt, setBattleStartedAt] = useState<string | null>(null);
 
-  // Sample question data (in real app, this would come from API/database)
-  const sampleQuestions = [
-    {
-      id: 1,
-      question: "What is the derivative of sin(x)?",
-      options: ["cos(x)", "-cos(x)", "sin(x)", "-sin(x)"],
-      correct: 0,
-      explanation: "The derivative of sin(x) is cos(x). This is a fundamental rule in calculus.",
-      difficulty: "Easy"
-    },
-    {
-      id: 2,
-      question: "Which of the following is the correct formula for kinetic energy?",
-      options: ["½mv²", "mv²", "½m²v", "m²v²"],
-      correct: 0,
-      explanation: "Kinetic energy is given by KE = ½mv², where m is mass and v is velocity.",
-      difficulty: "Medium"
+  // Initialize battle session timestamp
+  useEffect(() => {
+    if (battleConfig && !battleStartedAt) {
+      setBattleStartedAt(new Date().toISOString());
     }
-  ];
+  }, [battleConfig, battleStartedAt]);
 
-  const currentQuestionData = sampleQuestions[Math.min(currentQuestion - 1, sampleQuestions.length - 1)];
+  // Load questions from database
+  useEffect(() => {
+    const loadQuestions = async () => {
+      if (!battleConfig) {
+        setError("No battle configuration found");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const examId = Number(localStorage.getItem('selectedExamId')) || 1;
+        const dbQuestions = await QuestionsService.getQuestionsForBattle(battleConfig, examId);
+        
+        if (dbQuestions.length === 0) {
+          setError("No questions available for this configuration");
+          setLoading(false);
+          return;
+        }
+
+        // Convert questions to battle format and shuffle them
+        const formattedQuestions = dbQuestions
+          .map(q => QuestionsService.formatQuestionForBattle(q))
+          .sort(() => Math.random() - 0.5)
+          .slice(0, battleConfig.questionCount);
+
+        setQuestions(formattedQuestions);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading questions:', err);
+        setError("Failed to load questions from database");
+        setLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, [battleConfig]);
+
+  const currentQuestionData = questions[Math.min(currentQuestion - 1, questions.length - 1)];
 
   useEffect(() => {
     if (battleConfig?.timeLimit && isTimerActive && timeLeft > 0) {
@@ -53,13 +86,82 @@ const BeastBattle = () => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
       return () => clearInterval(timer);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && isTimerActive) {
       setIsTimerActive(false);
       setShowExplanation(true);
+      
+      // Auto-save question when time runs out
+      if (selectedAnswer && confidence) {
+        const questionResult = {
+          questionNumber: currentQuestion,
+          questionId: currentQuestionData.id,
+          selectedAnswer: parseInt(selectedAnswer),
+          correctAnswer: currentQuestionData.correct,
+          confidence,
+          timeSpent: battleConfig?.timeLimit || 30, // Full time used
+          isCorrect: parseInt(selectedAnswer) === currentQuestionData.correct,
+          timestamp: Date.now()
+        };
+        saveQuestionToDatabase(questionResult);
+        
+        setBattleSession(prev => ({
+          ...prev,
+          questions: [...prev.questions, questionResult]
+        }));
+      } else if (selectedAnswer) {
+        // Answer selected but no confidence - save with default confidence
+        const questionResult = {
+          questionNumber: currentQuestion,
+          questionId: currentQuestionData.id,
+          selectedAnswer: parseInt(selectedAnswer),
+          correctAnswer: currentQuestionData.correct,
+          confidence: 'low', // Default confidence when time runs out
+          timeSpent: battleConfig?.timeLimit || 30,
+          isCorrect: parseInt(selectedAnswer) === currentQuestionData.correct,
+          timestamp: Date.now()
+        };
+        saveQuestionToDatabase(questionResult);
+        
+        setBattleSession(prev => ({
+          ...prev,
+          questions: [...prev.questions, questionResult]
+        }));
+      }
     }
-  }, [timeLeft, isTimerActive, battleConfig?.timeLimit]);
+  }, [timeLeft, isTimerActive, battleConfig?.timeLimit, selectedAnswer, confidence, currentQuestion, currentQuestionData]);
 
-  const submitAnswer = () => {
+  const saveQuestionToDatabase = async (questionResult: any) => {
+    if (!user || !battleStartedAt) return;
+
+    try {
+      const examId = Number(localStorage.getItem('selectedExamId')) || 1;
+      
+      const { error: saveError } = await supabase
+        .from('battle_logs')
+        .insert({
+          user_id: user.id,
+          question_id: questionResult.questionId, // Use UUID directly
+          question_number: questionResult.questionNumber,
+          selected_answer: questionResult.selectedAnswer,
+          correct_answer: questionResult.correctAnswer,
+          is_correct: questionResult.isCorrect,
+          confidence: questionResult.confidence,
+          time_spent: questionResult.timeSpent,
+          battle_started_at: battleStartedAt,
+          exam_id: examId
+        });
+
+      if (saveError) {
+        console.error('Error saving question to database:', saveError);
+      } else {
+        console.log('Question saved to database successfully');
+      }
+    } catch (err) {
+      console.error('Error in saveQuestionToDatabase:', err);
+    }
+  };
+
+  const submitAnswer = async () => {
     if (!selectedAnswer || !confidence) return;
 
     setIsTimerActive(false);
@@ -76,6 +178,9 @@ const BeastBattle = () => {
       timestamp: Date.now()
     };
 
+    // Save to database
+    await saveQuestionToDatabase(questionResult);
+
     setBattleSession(prev => ({
       ...prev,
       questions: [...prev.questions, questionResult]
@@ -83,7 +188,7 @@ const BeastBattle = () => {
   };
 
   const nextQuestion = () => {
-    if (currentQuestion < (battleConfig?.questionCount || 20)) {
+    if (currentQuestion < questions.length) {
       setCurrentQuestion(prev => prev + 1);
       setSelectedAnswer("");
       setConfidence("");
@@ -97,7 +202,7 @@ const BeastBattle = () => {
         endTime: Date.now(),
         totalQuestions: currentQuestion
       };
-      navigate("/attack/reflect", { state: { sessionData: finalSession } });
+      navigate("/battlefield/attack/reflect", { state: { sessionData: finalSession } });
     }
   };
 
@@ -119,7 +224,48 @@ const BeastBattle = () => {
         <Card className="bg-gray-800 border-gray-700">
           <CardContent className="p-8 text-center">
             <p className="text-gray-400 mb-4">No battle configuration found</p>
-            <Button onClick={() => navigate("/attack/plan")}>Plan a Battle</Button>
+            <Button onClick={() => navigate("/battlefield/attack/plan")}>Plan a Battle</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <p className="text-gray-400 mb-4">Loading questions from database...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-gray-400 mb-4">{error}</p>
+            <Button onClick={() => navigate("/battlefield/attack/plan")}>Back to Plan</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+            <p className="text-gray-400 mb-4">No questions available for this configuration</p>
+            <Button onClick={() => navigate("/battlefield/attack/plan")}>Back to Plan</Button>
           </CardContent>
         </Card>
       </div>
@@ -133,7 +279,7 @@ const BeastBattle = () => {
         <div className="flex items-center justify-between mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/attack/plan")}
+            onClick={() => navigate("/battlefield/attack/plan")}
             className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -142,7 +288,7 @@ const BeastBattle = () => {
           
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">⚔️ Beast Battle</h1>
-            <p className="text-gray-400">Question {currentQuestion} of {battleConfig.questionCount}</p>
+            <p className="text-gray-400">Question {currentQuestion} of {questions.length}</p>
           </div>
 
           {battleConfig.timeLimit > 0 && (
@@ -159,24 +305,11 @@ const BeastBattle = () => {
         <div className="w-full bg-gray-700 rounded-full h-3 mb-8">
           <div 
             className="bg-gradient-to-r from-red-500 to-orange-500 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${(currentQuestion / battleConfig.questionCount) * 100}%` }}
+            style={{ width: `${(currentQuestion / questions.length) * 100}%` }}
           />
         </div>
 
-        {/* Battle Configuration Display */}
-        <div className="flex flex-wrap gap-2 mb-6 justify-center">
-          <Badge className="bg-red-600">{battleConfig.subject}</Badge>
-          {battleConfig.topic && <Badge variant="outline" className="border-gray-600 text-gray-300">{battleConfig.topic}</Badge>}
-          <Badge variant="outline" className="border-gray-600 text-gray-300">{battleConfig.source}</Badge>
-          <Badge className={`${
-            battleConfig.difficulty === 'Easy' ? 'bg-green-600' :
-            battleConfig.difficulty === 'Medium' ? 'bg-yellow-600' :
-            battleConfig.difficulty === 'Hard' ? 'bg-red-600' :
-            'bg-purple-600'
-          }`}>
-            {battleConfig.difficulty}
-          </Badge>
-        </div>
+
 
         {/* Question Card */}
         <Card className="bg-gray-800 border-gray-700 mb-6">
@@ -282,7 +415,7 @@ const BeastBattle = () => {
                     onClick={nextQuestion}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 text-lg font-bold"
                   >
-                    {currentQuestion < battleConfig.questionCount ? "Next Question →" : "Complete Battle 🏆"}
+                    {currentQuestion < questions.length ? "Next Question →" : "Complete Battle 🏆"}
                   </Button>
                 )}
               </div>
