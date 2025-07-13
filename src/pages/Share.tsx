@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Share as ShareIcon } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const COLOR_OPTIONS = [
   '#5E60CE', '#4CC9F0', '#4895EF', '#3A0CA3', '#7209B7',
@@ -96,7 +97,12 @@ const SharePage = () => {
           </div>
           {showSpentGraph && (
             <div className="mt-4 h-24 flex items-center justify-center bg-gray-800/40 rounded-xl">
-              <span className="text-gray-400">[Spent Graph Placeholder]</span>
+              {/* Full-width, full-height bar graph using selected color */}
+              <div className="flex items-end gap-2 w-full h-full">
+                {[40, 60, 30, 80, 55, 70, 50].map((h, i) => (
+                  <div key={i} style={{ background: color, height: `${h}%` }} className="flex-1 rounded-t-md transition-colors duration-200" />
+                ))}
+              </div>
             </div>
           )}
           <div className="flex items-center justify-between mt-4">
@@ -166,36 +172,46 @@ const SharePage = () => {
             <ShareCard />
           </div>
         </div>
-        {/* Theme/settings card below the background */}
-        <div className="mt-6 bg-slate-800 rounded-xl p-4 space-y-4 w-full max-w-2xl">
-          <div className="flex items-center justify-between">
-            <span className="text-white font-medium">Theme</span>
-            <div className="flex gap-2">
-              {THEME_OPTIONS.map((t) => (
-                <button
-                  key={t}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors duration-150 ${
-                    theme === t ? 'bg-slate-700 text-white' : 'bg-slate-600 text-gray-300'
-                  }`}
-                  onClick={() => setTheme(t as 'Light' | 'Dark')}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+        {/* Settings as 5 separate cards (list view) */}
+        {/* 1. Category */}
+        <div className="bg-slate-800 rounded-xl p-4 mb-4 w-full max-w-2xl flex items-center justify-between mt-10">
+          <span className="text-white font-medium">Category</span>
+          <span className="bg-[${color}] text-white font-semibold rounded-lg px-4 py-1 text-base" style={{ background: color }}>{mockData.title}</span>
+        </div>
+        {/* 2. Theme */}
+        <div className="bg-slate-800 rounded-xl p-4 mb-4 w-full max-w-2xl flex items-center justify-between">
+          <span className="text-white font-medium">Theme</span>
+          <div className="flex gap-2">
+            {THEME_OPTIONS.map((t) => (
+              <button
+                key={t}
+                className={`px-3 py-1 rounded-lg font-semibold transition-colors duration-150 ${
+                  theme === t
+                    ? ''
+                    : 'bg-slate-600 text-gray-300'
+                }`}
+                style={theme === t ? { background: color, color: '#fff', border: `2px solid ${color}` } : {}}
+                onClick={() => setTheme(t as 'Light' | 'Dark')}
+              >
+                {t}
+              </button>
+            ))}
           </div>
-          <div>
-            <span className="block text-white font-medium mb-2">Colors</span>
-            <ColorSelector options={COLOR_OPTIONS} value={color} onChange={setColor} />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-white font-medium">Show Time Spent</span>
-            <input type="checkbox" checked={showTimeSpent} onChange={e => setShowTimeSpent(e.target.checked)} className="w-5 h-5 rounded focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-white font-medium">Show Spent Graph</span>
-            <input type="checkbox" checked={showSpentGraph} onChange={e => setShowSpentGraph(e.target.checked)} className="w-5 h-5 rounded focus:ring-2 focus:ring-blue-500" />
-          </div>
+        </div>
+        {/* 3. Color */}
+        <div className="bg-slate-800 rounded-xl p-4 mb-4 w-full max-w-2xl">
+          <span className="block text-white font-medium mb-2">Colors</span>
+          <ColorSelector options={COLOR_OPTIONS} value={color} onChange={setColor} />
+        </div>
+        {/* 4. Show Time Spent */}
+        <div className="bg-slate-800 rounded-xl p-4 mb-4 w-full max-w-2xl flex items-center justify-between">
+          <span className="text-white font-medium">Show Time Spent</span>
+          <Checkbox checked={showTimeSpent} onCheckedChange={v => setShowTimeSpent(v === true)} style={showTimeSpent ? { background: color, borderColor: color } : {}} />
+        </div>
+        {/* 5. Show Spent Graph */}
+        <div className="bg-slate-800 rounded-xl p-4 mb-4 w-full max-w-2xl flex items-center justify-between">
+          <span className="text-white font-medium">Show Spent Graph</span>
+          <Checkbox checked={showSpentGraph} onCheckedChange={v => setShowSpentGraph(v === true)} style={showSpentGraph ? { background: color, borderColor: color } : {}} />
         </div>
       </main>
     </div>
