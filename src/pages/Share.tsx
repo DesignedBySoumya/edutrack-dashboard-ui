@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Share as ShareIcon } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toPng } from 'html-to-image';
 
 const COLOR_OPTIONS = [
   '#5E60CE', '#4CC9F0', '#4895EF', '#3A0CA3', '#7209B7',
@@ -32,6 +33,7 @@ const SharePage = () => {
   const [color, setColor] = useState<string>(mockData.customization.color);
   const [showTimeSpent, setShowTimeSpent] = useState(true);
   const [showSpentGraph, setShowSpentGraph] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
 
   // Local ColorSelector
   const ColorSelector = ({ options, value, onChange }: { options: string[]; value: string; onChange: (c: string) => void }) => (
@@ -116,25 +118,53 @@ const SharePage = () => {
 
   // Share handler
   const handleShare = async () => {
-    const shareData = {
-      title: 'Check out my progress on EduTrack!',
-      text: 'Here is my latest study progress. Join me on EduTrack!',
-      url: window.location.href,
-    };
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        // User cancelled or error
+    if (!cardRef.current) return;
+    try {
+      // Create a temporary export container
+      const exportContainer = document.createElement('div');
+      exportContainer.style.width = '2000px';
+      exportContainer.style.height = '2000px';
+      exportContainer.style.display = 'flex';
+      exportContainer.style.alignItems = 'center';
+      exportContainer.style.justifyContent = 'center';
+      exportContainer.style.background = bgColor;
+      // Clone the card node and scale it up more
+      const cardClone = cardRef.current.cloneNode(true);
+      if (cardClone instanceof HTMLElement) {
+        cardClone.style.transform = 'scale(3.2)';
+        cardClone.style.transformOrigin = 'center';
+        cardClone.style.boxShadow = '0 8px 32px rgba(0,0,0,0.25)';
+        cardClone.style.maxWidth = '1400px';
+        cardClone.style.width = '1400px';
+        cardClone.style.margin = '0';
+        exportContainer.appendChild(cardClone);
       }
-    } else {
-      // Fallback: copy link
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        alert('Link copied to clipboard!');
-      } catch (err) {
-        alert('Could not copy link.');
+      document.body.appendChild(exportContainer);
+      const dataUrl = await toPng(exportContainer, {
+        width: 2000,
+        height: 2000,
+        backgroundColor: bgColor,
+      });
+      document.body.removeChild(exportContainer);
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'edutrack-share.png', { type: blob.type });
+      // Try Web Share API with file (mobile, supported browsers)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My EduTrack Progress',
+          text: 'Check out my progress!'
+        });
+      } else {
+        // Fallback: download image
+        const link = document.createElement('a');
+        link.download = 'edutrack-share.png';
+        link.href = dataUrl;
+        link.click();
       }
+    } catch (err) {
+      alert('Could not export image.');
     }
   };
 
@@ -168,7 +198,7 @@ const SharePage = () => {
       <main className="w-full max-w-2xl mx-auto pt-16 pb-24 px-2 flex flex-col items-center">
         {/* Color-changing background wrapping the shareable card, full viewport width, no gap from header */}
         <div className="w-screen max-w-none flex justify-center items-center" style={{ background: bgColor, padding: '2.5rem 0 2.5rem 0', opacity: 0.7, marginTop: 0 }}>
-          <div className="flex flex-col items-center justify-center w-full" style={{ maxWidth: 600 }}>
+          <div ref={cardRef} className="flex flex-col items-center justify-center w-full" style={{ maxWidth: 600 }}>
             <ShareCard />
           </div>
         </div>
