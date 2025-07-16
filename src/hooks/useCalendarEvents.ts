@@ -1,110 +1,156 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  fetchEvents,
+  insertEvent,
+  updateEvent as supabaseUpdateEvent,
+  deleteEvent as supabaseDeleteEvent,
+  fetchCalendars,
+  createCalendar,
+  updateCalendar as supabaseUpdateCalendar,
+  deleteCalendar as supabaseDeleteCalendar,
+  CalendarEvent as BackendCalendarEvent,
+  Calendar as BackendCalendar,
+  addEvent as addEventService,
+} from '@/lib/calendarEventsService';
 import { CalendarEvent, Calendar } from '@/types/calendar';
 
-const DEFAULT_CALENDARS: Calendar[] = [
-  { id: '1', name: 'Study', color: '#10B981', visible: true, type: 'study' },
-];
+function mapBackendCalendar(cal: BackendCalendar): Calendar {
+  return {
+    id: cal.id,
+    name: cal.name,
+    color: cal.color,
+    visible: true, // default to true; adjust if you store this in DB
+    type: 'study', // fallback; adjust if you store this in DB
+  };
+}
+
+function mapBackendEvent(ev: BackendCalendarEvent): CalendarEvent {
+  return {
+    id: ev.id,
+    title: ev.title,
+    calendarId: ev.calendar_id || '',
+    description: ev.description,
+    start: new Date(ev.start_time),
+    end: new Date(ev.end_time),
+    color: ev.color,
+    isAllDay: ev.all_day,
+    createdAt: new Date(ev.created_at),
+    updatedAt: new Date(ev.updated_at),
+  };
+}
 
 export const useCalendarEvents = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [calendars, setCalendars] = useState<Calendar[]>(DEFAULT_CALENDARS);
+  const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch events and calendars on mount
   useEffect(() => {
-    const savedEvents = localStorage.getItem('focustime-events');
-    const savedCalendars = localStorage.getItem('focustime-calendars');
-    
-    if (savedEvents) {
-      const parsedEvents = JSON.parse(savedEvents).map((event: any) => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end),
-        createdAt: new Date(event.createdAt),
-        updatedAt: new Date(event.updatedAt),
-      }));
-      setEvents(parsedEvents);
-    }
-    
-    if (savedCalendars) {
-      setCalendars(JSON.parse(savedCalendars));
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [eventsData, calendarsData] = await Promise.all([
+          fetchEvents(),
+          fetchCalendars(),
+        ]);
+        setEvents(eventsData.map(mapBackendEvent));
+        setCalendars(calendarsData.map(mapBackendCalendar));
+      } catch (err: any) {
+        setError(err.message || 'Failed to load calendar data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  // Add event
+  const addEvent = useCallback(async (event: {
+    title: string;
+    description?: string;
+    start_time: string;
+    end_time: string;
+    all_day: boolean;
+    color: string;
+    location?: string;
+    calendar_id?: string;
+  }) => {
+    const newEvent = await addEventService(event);
+    setEvents((prev) => [...prev, mapBackendEvent(newEvent)]);
+    return mapBackendEvent(newEvent);
+  }, []);
+
+  // Update event
+  const updateEvent = useCallback(async (id: string, updates: Partial<Omit<BackendCalendarEvent, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+    // Convert Date objects to ISO strings for start_time/end_time
+    const backendUpdates: any = { ...updates };
+    if ('start' in updates && updates.start instanceof Date) backendUpdates.start_time = updates.start.toISOString();
+    if ('end' in updates && updates.end instanceof Date) backendUpdates.end_time = updates.end.toISOString();
+    delete backendUpdates.start;
+    delete backendUpdates.end;
+    const updated = await supabaseUpdateEvent(id, backendUpdates);
+    setEvents((prev) => prev.map((e) => (e.id === id ? mapBackendEvent(updated) : e)));
+    return mapBackendEvent(updated);
+  }, []);
+
+  // Delete event
+  const deleteEvent = useCallback(async (id: string) => {
+    await supabaseDeleteEvent(id);
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+  }, []);
+
+  // Add calendar with error handling and UI refresh
+  const addCalendar = useCallback(async (calendar: Omit<Calendar, 'id' | 'visible' | 'type'>) => {
+    try {
+      const newCalendar = await createCalendar({
+        name: calendar.name,
+        color: calendar.color
+      });
+      setCalendars((prev) => [...prev, mapBackendCalendar(newCalendar)]);
+      return mapBackendCalendar(newCalendar);
+    } catch (error: any) {
+      console.error('Failed to create calendar:', error);
+      alert(error.message || 'Failed to create calendar');
+      throw error;
     }
   }, []);
 
-  const saveEvents = (newEvents: CalendarEvent[]) => {
-    localStorage.setItem('focustime-events', JSON.stringify(newEvents));
-    setEvents(newEvents);
-  };
+  // Update calendar
+  const updateCalendar = useCallback(async (id: string, updates: Partial<Omit<BackendCalendar, 'id' | 'user_id' | 'created_at'>>) => {
+    const updated = await supabaseUpdateCalendar(id, updates);
+    setCalendars((prev) => prev.map((c) => (c.id === id ? mapBackendCalendar(updated) : c)));
+    return mapBackendCalendar(updated);
+  }, []);
 
-  const saveCalendars = (newCalendars: Calendar[]) => {
-    localStorage.setItem('focustime-calendars', JSON.stringify(newCalendars));
-    setCalendars(newCalendars);
-  };
+  // Delete calendar
+  const deleteCalendar = useCallback(async (id: string) => {
+    await supabaseDeleteCalendar(id);
+    setCalendars((prev) => prev.filter((c) => c.id !== id));
+    setEvents((prev) => prev.filter((e) => e.calendarId !== id));
+  }, []);
 
-  const addEvent = (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newEvent: CalendarEvent = {
-      ...event,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    const newEvents = [...events, newEvent];
-    saveEvents(newEvents);
-    return newEvent;
-  };
-
-  const updateEvent = (id: string, updates: Partial<CalendarEvent>) => {
-    const newEvents = events.map(event => 
-      event.id === id 
-        ? { ...event, ...updates, updatedAt: new Date() }
-        : event
+  // Toggle calendar visibility (frontend only)
+  const toggleCalendarVisibility = useCallback((calendarId: string) => {
+    setCalendars((prev) =>
+      prev.map((cal) =>
+        cal.id === calendarId ? { ...cal, visible: !('visible' in cal ? cal.visible : true) } : cal
+      )
     );
-    saveEvents(newEvents);
-  };
-
-  const deleteEvent = (id: string) => {
-    const newEvents = events.filter(event => event.id !== id);
-    saveEvents(newEvents);
-  };
-
-  const toggleCalendarVisibility = (calendarId: string) => {
-    const newCalendars = calendars.map(cal => 
-      cal.id === calendarId 
-        ? { ...cal, visible: !cal.visible }
-        : cal
-    );
-    saveCalendars(newCalendars);
-  };
-
-  const addCalendar = (name: string, color: string) => {
-    const newCalendar: Calendar = {
-      id: crypto.randomUUID(),
-      name,
-      color,
-      visible: true,
-      type: 'study'
-    };
-    const newCalendars = [...calendars, newCalendar];
-    saveCalendars(newCalendars);
-    return newCalendar;
-  };
-
-  const deleteCalendar = (calendarId: string) => {
-    // Remove the calendar
-    const newCalendars = calendars.filter(cal => cal.id !== calendarId);
-    saveCalendars(newCalendars);
-    // Remove all events associated with this calendar
-    const newEvents = events.filter(event => event.calendarId !== calendarId);
-    saveEvents(newEvents);
-  };
+  }, []);
 
   return {
     events,
     calendars,
+    loading,
+    error,
     addEvent,
     updateEvent,
     deleteEvent,
-    toggleCalendarVisibility,
     addCalendar,
+    updateCalendar,
     deleteCalendar,
+    toggleCalendarVisibility,
   };
 };

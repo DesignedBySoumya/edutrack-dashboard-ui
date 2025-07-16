@@ -16,11 +16,20 @@ interface EventModalProps {
   onClose: () => void;
   event?: CalendarEvent;
   calendars: Calendar[];
-  onSave: (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdate: (id: string, updates: Partial<CalendarEvent>) => void;
   onDelete: (id: string) => void;
   startTime?: Date | null;
   endTime?: Date | null;
+  onSave: (eventData: {
+    title: string;
+    description?: string;
+    start_time: string;
+    end_time: string;
+    all_day: boolean;
+    color: string;
+    location?: string;
+    calendar_id?: string;
+  }) => void;
 }
 
 const TIME_OPTIONS = Array.from({ length: 24 * 4 }, (_, i) => {
@@ -43,11 +52,11 @@ export const EventModal = ({
   onClose, 
   event, 
   calendars, 
-  onSave, 
   onUpdate, 
   onDelete,
   startTime,
-  endTime
+  endTime,
+  onSave
 }: EventModalProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -62,11 +71,11 @@ export const EventModal = ({
     if (event) {
       setTitle(event.title);
       setDescription(event.description || '');
-      setCalendarId(event.calendarId);
-      setDate(event.start);
-      setStartTimeInput(format(event.start, 'HH:mm'));
-      setEndTimeInput(format(event.end, 'HH:mm'));
-      setIsAllDay(event.isAllDay || false);
+      setCalendarId(event.calendarId || calendars[0]?.id || '');
+      setDate(event.start ? new Date(event.start) : null);
+      setStartTimeInput(event.start ? format(new Date(event.start), 'HH:mm') : '09:00');
+      setEndTimeInput(event.end ? format(new Date(event.end), 'HH:mm') : '10:00');
+      setIsAllDay(event.isAllDay ?? false);
       setEventColor(event.color || '');
     } else if (startTime && endTime) {
       setTitle('');
@@ -79,7 +88,6 @@ export const EventModal = ({
       setEventColor(calendars[0]?.color || CONTRAST_COLORS[0]);
     } else {
       const now = new Date();
-      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
       setTitle('');
       setDescription('');
       setCalendarId(calendars[0]?.id || '');
@@ -91,29 +99,26 @@ export const EventModal = ({
     }
   }, [event, calendars, startTime, endTime]);
 
+  const [location, setLocation] = useState('');
+
   const handleSave = () => {
     if (!title.trim() || !date) return;
-    const selectedCalendar = calendars.find(cal => cal.id === calendarId);
     const [startHour, startMin] = startTimeInput.split(':').map(Number);
     const [endHour, endMin] = endTimeInput.split(':').map(Number);
     const start = new Date(date);
     start.setHours(startHour, startMin, 0, 0);
     const end = new Date(date);
     end.setHours(endHour, endMin, 0, 0);
-    const eventData = {
+    onSave({
       title: title.trim(),
-      description: description.trim(),
-      calendarId,
-      start: isAllDay ? new Date(date.setHours(0,0,0,0)) : start,
-      end: isAllDay ? new Date(date.setHours(23,59,59,999)) : end,
-      color: eventColor || selectedCalendar?.color || '#3B82F6',
-      isAllDay,
-    };
-    if (event) {
-      onUpdate(event.id, eventData);
-    } else {
-      onSave(eventData);
-    }
+      description,
+      start_time: isAllDay ? new Date(date.setHours(0,0,0,0)).toISOString() : start.toISOString(),
+      end_time: isAllDay ? new Date(date.setHours(23,59,59,999)).toISOString() : end.toISOString(),
+      all_day: isAllDay,
+      color: eventColor,
+      location: location || '',
+      calendar_id: calendarId || undefined,
+    });
   };
 
   const handleDelete = () => {
@@ -153,7 +158,7 @@ export const EventModal = ({
             setEventColor(cal?.color || CONTRAST_COLORS[0]);
           }}>
             <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
-              <SelectValue placeholder="Select subject/category" />
+              <SelectValue placeholder="Select calendar/category" />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-700 text-white">
               {calendars.map(calendar => (

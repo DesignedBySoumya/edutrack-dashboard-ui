@@ -44,7 +44,7 @@ export const EventCard = ({
         onClick={onClick}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
-        draggable
+        draggable={true}
       >
         <div className="p-2">
           <div className="flex items-center gap-1 mb-1">
@@ -76,7 +76,7 @@ export const EventCard = ({
       onClick={onClick}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      draggable
+      draggable={true}
     >
       <div className="p-2">
         <div className="text-xs font-medium text-muted-foreground mb-1">

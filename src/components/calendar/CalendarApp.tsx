@@ -33,23 +33,11 @@ export const CalendarApp = () => {
     setIsModalOpen(true);
   };
 
-  const handleCreateEvent = (start: Date, end: Date) => {
-    setSelectedEvent(undefined);
-    setModalStartTime(start);
-    setModalEndTime(end);
-    setIsModalOpen(true);
-  };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(undefined);
     setModalStartTime(null);
     setModalEndTime(null);
-  };
-
-  const handleSaveEvent = (eventData: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
-    addEvent(eventData);
-    handleCloseModal();
   };
 
   const handleUpdateEvent = (id: string, updates: Partial<CalendarEvent>) => {
@@ -62,10 +50,30 @@ export const CalendarApp = () => {
     handleCloseModal();
   };
 
-  const handleNewEventClick = () => {
-    const now = new Date();
-    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-    handleCreateEvent(now, oneHourLater);
+  const handleAddEventClick = () => {
+    setSelectedEvent(undefined);
+    setModalStartTime(new Date());
+    setModalEndTime(new Date(Date.now() + 60 * 60 * 1000));
+    setIsModalOpen(true);
+  };
+
+  const handleSaveEvent = async (eventData: {
+    title: string;
+    description?: string;
+    start_time: string;
+    end_time: string;
+    all_day: boolean;
+    color: string;
+    location?: string;
+    calendar_id?: string;
+  }) => {
+    await addEvent(eventData);
+    setIsModalOpen(false);
+  };
+
+  // Wrapper for Sidebar's addCalendar signature
+  const handleAddCalendar = async (name: string, color: string, description: string) => {
+    await addCalendar({ name, color });
   };
 
   // Link sidebar calendar range selection to main calendar view
@@ -92,8 +100,8 @@ export const CalendarApp = () => {
         <Sidebar
           calendars={calendars}
           onToggleCalendar={toggleCalendarVisibility}
-          onNewEvent={handleNewEventClick}
-          onAddCalendar={addCalendar}
+          onNewEvent={handleAddEventClick}
+          onAddCalendar={handleAddCalendar}
           currentDate={currentDate}
           onDateSelect={(dateOrRange) => {
             if (dateOrRange instanceof Date) {
@@ -114,7 +122,7 @@ export const CalendarApp = () => {
             events={events}
             calendars={calendars}
             onEventClick={handleEventClick}
-            onCreateEvent={handleCreateEvent}
+            onCreateEvent={() => {}}
             onMoveEvent={updateEvent}
           />
         </div>
@@ -122,7 +130,7 @@ export const CalendarApp = () => {
 
       <EventModal
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => setIsModalOpen(false)}
         event={selectedEvent}
         calendars={calendars}
         onSave={handleSaveEvent}

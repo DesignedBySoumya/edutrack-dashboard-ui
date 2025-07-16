@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CalendarEvent, Calendar, ViewType, DragState } from '@/types/calendar';
 import { getMonthGrid, getWeekDays, formatDate, snapToGrid, isEventInDay } from '@/lib/dateUtils';
 import { EventCard } from './EventCard';
@@ -43,6 +43,11 @@ export const CalendarGrid = ({
     hour?: number;
     minutes?: number;
   } | null>(null);
+
+  // Add a local state for previewing the resizing event and tooltip position
+  const [resizePreview, setResizePreview] = useState<{ eventId: string; newEnd: Date; mouseY: number } | null>(null);
+
+  const MIN_EVENT_DURATION_MINUTES = 15;
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -213,36 +218,48 @@ export const CalendarGrid = ({
       startY: e.clientY,
       originalEnd: event.end,
     });
+    setResizePreview(null);
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!resizingEvent) return;
-      
-      const deltaY = e.clientY - resizingEvent.startY;
-      const hoursDelta = deltaY / 48; // Assuming 48px per hour
-      const newEnd = new Date(resizingEvent.originalEnd.getTime() + hoursDelta * 60 * 60 * 1000);
-      
       const event = events.find(ev => ev.id === resizingEvent.eventId);
-      if (event && newEnd > event.start) {
-        onMoveEvent(resizingEvent.eventId, { end: snapToGrid(newEnd) });
+      if (!event) return;
+      const deltaY = e.clientY - resizingEvent.startY;
+      const minutesDelta = Math.round((deltaY / 48) * 60 / 15) * 15; // Snap to 15 min
+      let newEnd = new Date(event.end.getTime() + minutesDelta * 60 * 1000);
+      newEnd = snapToGrid(newEnd, 15);
+      // Enforce minimum duration
+      if (newEnd <= event.start || (newEnd.getTime() - event.start.getTime()) < MIN_EVENT_DURATION_MINUTES * 60 * 1000) {
+        newEnd = new Date(event.start.getTime() + MIN_EVENT_DURATION_MINUTES * 60 * 1000);
       }
+      setResizePreview({ eventId: event.id, newEnd, mouseY: e.clientY });
     };
-
     const handleMouseUp = () => {
+      if (resizePreview) {
+        onMoveEvent(resizePreview.eventId, { end: resizePreview.newEnd });
+      }
       setResizingEvent(null);
+      setResizePreview(null);
     };
-
     if (resizingEvent) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
-
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizingEvent, events, onMoveEvent]);
+  }, [resizingEvent, events, onMoveEvent, resizePreview]);
+
+  // When rendering events, if resizePreview is active, use the preview end time
+  const getEventWithPreview = (event: CalendarEvent) => {
+    if (resizePreview && resizePreview.eventId === event.id) {
+      return { ...event, end: resizePreview.newEnd };
+    }
+    return event;
+  };
 
   const renderMonthView = () => {
     const days = getMonthGrid(currentDate);
@@ -259,23 +276,8 @@ export const CalendarGrid = ({
         
         {/* Days */}
         {days.map((day, index) => {
-          // Filter events: only show events starting at or after 9:00 AM, exclude 1:34 PM - 2:00 PM
-          const dayEvents = visibleEvents.filter(event => {
-            if (!isEventInDay(event, day)) return false;
-            
-            const startHour = event.start.getHours();
-            const startMinutes = event.start.getMinutes();
-            const startTime = startHour * 60 + startMinutes;
-            
-            // Only show events starting at or after 9:00 AM (540 minutes)
-            if (startTime < 540) return false;
-            
-            // Exclude events between 1:34 PM (814 minutes) and 2:00 PM (840 minutes)
-            if (startTime >= 814 && startTime < 840) return false;
-            
-            return true;
-          });
-          
+          // Show all events for the day (no time filtering)
+          const dayEvents = visibleEvents.filter(event => isEventInDay(event, day));
           const isToday = isSameDay(day, today);
           const isCurrentMonth = day.getMonth() === currentDate.getMonth();
           const isDragOver = dragOverInfo && isSameDay(dragOverInfo.date, day);
@@ -305,10 +307,9 @@ export const CalendarGrid = ({
                 {dayEvents.slice(0, 3).map(event => (
                   <EventCard
                     key={event.id}
-                    event={event}
+                    event={getEventWithPreview(event)}
                     onClick={() => onEventClick(event)}
                     onDragStart={(e) => handleEventDragStart(e, event)}
-                    className="text-xs"
                     onDragEnd={handleDragEnd}
                     view="month"
                   />
@@ -388,11 +389,11 @@ export const CalendarGrid = ({
                     .map(event => (
                       <div key={event.id} className="pointer-events-auto">
                         <EventCard
-                          event={event}
+                          event={getEventWithPreview(event)}
                           onClick={() => onEventClick(event)}
                           onDragStart={(e) => handleEventDragStart(e, event)}
                           onResizeStart={(e) => handleResizeStart(e, event)}
-                          style={getEventStyle(event, 1440)}
+                          style={getEventStyle(getEventWithPreview(event), 1440)}
                           className="text-xs"
                           onDragEnd={handleDragEnd}
                           view="week"
@@ -467,11 +468,11 @@ export const CalendarGrid = ({
                 {dayEvents.map(event => (
                   <div key={event.id} className="pointer-events-auto">
                     <EventCard
-                      event={event}
+                      event={getEventWithPreview(event)}
                       onClick={() => onEventClick(event)}
                       onDragStart={(e) => handleEventDragStart(e, event)}
                       onResizeStart={(e) => handleResizeStart(e, event)}
-                      style={getEventStyle(event, 1440)}
+                      style={getEventStyle(getEventWithPreview(event), 1440)}
                       onDragEnd={handleDragEnd}
                       view="day"
                     />
