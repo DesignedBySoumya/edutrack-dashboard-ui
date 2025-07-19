@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Zap, Target, Calendar } from "lucide-react";
+import { Brain, Zap, Target, Calendar, Star, Flame, Trophy } from "lucide-react";
 
 export const FlashcardStats = () => {
   const stats = {
@@ -30,31 +30,35 @@ export const FlashcardStats = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Main Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-4 bg-zinc-800 rounded-xl">
-            <div className="text-2xl font-bold text-gray-100">{stats.totalXP}</div>
-            <div className="text-xs text-gray-400">Total XP</div>
-            <Badge variant="secondary" className="mt-1 bg-zinc-700 text-gray-200 border-0">Level {stats.currentLevel}</Badge>
-          </div>
-          <div className="text-center p-4 bg-zinc-800 rounded-xl">
-            <div className="text-2xl font-bold text-gray-100">{stats.accuracy}%</div>
-            <div className="text-xs text-gray-400">Accuracy</div>
-          </div>
-        </div>
-
-        {/* Streaks */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center space-x-3">
-            <Zap className="h-4 w-4 text-yellow-400" />
-            <div>
-              <div className="font-medium text-gray-100">{stats.currentStreak} days</div>
+        <div className="w-full max-w-full overflow-x-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 gap-y-4">
+            <div className="text-center p-3 md:p-4 rounded-xl bg-[#0e0e10] flex flex-col items-center w-full">
+              <div className="flex items-center justify-center gap-2">
+                <Star className="h-5 w-5 text-blue-400" />
+                <div className="font-bold text-[#3B82F6] text-lg md:text-2xl">{stats.totalXP}</div>
+              </div>
+              <div className="text-xs text-gray-400">Total XP</div>
+            </div>
+            <div className="text-center p-3 md:p-4 rounded-xl bg-[#0e0e10] flex flex-col items-center w-full">
+              <div className="flex items-center justify-center gap-2">
+                <Target className="h-5 w-5 text-green-400" />
+                <div className="font-bold text-[#10B981] text-lg md:text-2xl">{stats.accuracy}%</div>
+              </div>
+              <div className="text-xs text-gray-400">Accuracy</div>
+            </div>
+            <div className="text-center p-3 md:p-4 rounded-xl bg-[#0e0e10] flex flex-col items-center w-full">
+              <div className="flex items-center justify-center gap-2">
+                <Flame className="h-5 w-5 text-yellow-400" />
+                <div className="font-bold text-[#FACC15] text-lg md:text-2xl">{stats.currentStreak}</div>
+                {stats.currentStreak >= 10 && <span className="ml-1 text-lg">🔥</span>}
+              </div>
               <div className="text-xs text-gray-400">Current Streak</div>
             </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Target className="h-4 w-4 text-gray-300" />
-            <div>
-              <div className="font-medium text-gray-100">{stats.longestStreak} days</div>
+            <div className="text-center p-3 md:p-4 rounded-xl bg-[#0e0e10] flex flex-col items-center w-full">
+              <div className="flex items-center justify-center gap-2">
+                <Trophy className="h-5 w-5 text-purple-400" />
+                <div className="font-bold text-[#8B5CF6] text-lg md:text-2xl">{stats.longestStreak}</div>
+              </div>
               <div className="text-xs text-gray-400">Longest Streak</div>
             </div>
           </div>
@@ -83,22 +87,25 @@ export const FlashcardStats = () => {
           </h4>
           <div className="space-y-2">
             {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-zinc-800 rounded-md">
+              <div
+                key={index}
+                className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-4 shadow flex flex-col sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div>
-                  <div className="text-sm font-medium text-gray-100">{activity.action}</div>
-                  <div className="text-xs text-gray-400">{activity.detail}</div>
+                  <div className="text-sm font-semibold text-white">{activity.action}</div>
+                  <div className="text-xs text-blue-300">{activity.detail}</div>
                 </div>
-                <div className="text-xs text-gray-400">{activity.time}</div>
+                <div className="text-xs text-gray-300 mt-2 sm:mt-0">{activity.time}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Last Session */}
-        <div className="p-4 bg-zinc-900 rounded-xl">
-          <div className="text-sm text-gray-400">Last Session</div>
-          <div className="font-medium text-gray-100">XP +120 earned</div>
-          <div className="text-xs text-gray-400">{stats.lastSession}</div>
+        <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 backdrop-blur-sm border border-green-500/30 rounded-2xl p-4 shadow mt-4">
+          <div className="text-sm text-green-300 mb-1">Last Session</div>
+          <div className="font-semibold text-white">XP +120 earned</div>
+          <div className="text-xs text-gray-300">{stats.lastSession}</div>
         </div>
       </CardContent>
     </Card>
