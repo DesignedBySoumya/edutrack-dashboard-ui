@@ -1,36 +1,25 @@
 
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { useState } from "react";
+import { DashboardStats } from "@/lib/dashboardService";
 
-export const WeeklyProgress = () => {
+interface WeeklyProgressProps {
+  stats: DashboardStats;
+}
+
+export const WeeklyProgress = ({ stats }: WeeklyProgressProps) => {
   const [activeTab, setActiveTab] = useState('week');
 
+  const tabs = [
+    { id: 'week', label: 'Week' },
+    { id: 'month', label: 'Month' },
+    { id: 'year', label: 'Year' }
+  ];
+
   // --- Data for each tab ---
-  const weeklyData = [
-    { day: "Mon", hours: 3.5, sessions: 3, date: "Mar 16" },
-    { day: "Tue", hours: 2.2, sessions: 2, date: "Mar 17" },
-    { day: "Wed", hours: 4.1, sessions: 4, date: "Mar 18" },
-    { day: "Thu", hours: 1.8, sessions: 2, date: "Mar 19" },
-    { day: "Fri", hours: 3.7, sessions: 3, date: "Mar 20" },
-    { day: "Sat", hours: 0.5, sessions: 1, date: "Mar 21" },
-    { day: "Sun", hours: 2.3, sessions: 2, date: "Mar 22" }
-  ];
-
-  const monthlyData = Array.from({ length: 30 }, (_, i) => ({
-    day: `${i + 1}`,
-    hours: Math.floor(Math.random() * 6) + 0.5,
-    sessions: Math.floor(Math.random() * 4) + 1,
-    date: `Mar ${i + 1}`
-  }));
-
-  const yearlyData = [
-    { month: 'Jan', hours: 40 }, { month: 'Feb', hours: 32 },
-    { month: 'Mar', hours: 45 }, { month: 'Apr', hours: 38 },
-    { month: 'May', hours: 42 }, { month: 'Jun', hours: 35 },
-    { month: 'Jul', hours: 48 }, { month: 'Aug', hours: 41 },
-    { month: 'Sep', hours: 39 }, { month: 'Oct', hours: 44 },
-    { month: 'Nov', hours: 46 }, { month: 'Dec', hours: 55 }
-  ];
+  const weeklyData = stats.weeklyData;
+  const monthlyData = stats.monthlyData;
+  const yearlyData = stats.yearlyData;
 
   // --- Helper functions to get dynamic data based on the active tab ---
   const getCurrentData = () => {
@@ -66,12 +55,6 @@ export const WeeklyProgress = () => {
     }
     return null;
   };
-
-  const tabs = [
-    { id: 'week', label: 'Week' },
-    { id: 'month', label: 'Month' },
-    { id: 'year', label: 'Year' }
-  ];
 
   return (
     <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">

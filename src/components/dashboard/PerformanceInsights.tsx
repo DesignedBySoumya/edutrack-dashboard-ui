@@ -1,22 +1,22 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { DashboardStats } from "@/lib/dashboardService";
 
-export const PerformanceInsights = () => {
+interface PerformanceInsightsProps {
+  stats: DashboardStats;
+}
+
+export const PerformanceInsights = ({ stats }: PerformanceInsightsProps) => {
   const performanceData = [
-    { title: "Last 10 Days Avg", value: "2h 45m", subtitle: "Per day", color: "text-blue-400" },
-    { title: "Today's Study", value: "3h 12m", subtitle: "Current session", color: "text-green-400" },
-    { title: "Focus Score", value: "87%", subtitle: "Great! Keep distractions low", color: "text-green-400" },
-    { title: "Consistency", value: "92%", subtitle: "14/15 days", color: "text-green-400" },
-    { title: "Mocks Done", value: "12", subtitle: "This month", color: "text-yellow-400" },
-    { title: "Current Streak", value: "7 days", subtitle: "Keep it up! 🔥", color: "text-orange-400" }
+    { title: "Last 10 Days Avg", value: stats.last10DaysAvg, subtitle: "Per day", color: "text-blue-400" },
+    { title: "Today's Study", value: stats.todayStudy, subtitle: "Current session", color: "text-green-400" },
+    { title: "Focus Score", value: `${stats.focusScore}%`, subtitle: "Great! Keep distractions low", color: "text-green-400" },
+    { title: "Consistency", value: `${stats.consistency}%`, subtitle: "14/15 days", color: "text-green-400" },
+    { title: "Mocks Done", value: stats.mocksDone.toString(), subtitle: "This month", color: "text-yellow-400" },
+    { title: "Current Streak", value: `${stats.currentStreak} days`, subtitle: "Keep it up! 🔥", color: "text-orange-400" }
   ];
-  const subjectData = [
-    { name: "Indian Polity", hours: 45, color: "#3B82F6" }, 
-    { name: "Modern History", hours: 32, color: "#10B981" },
-    { name: "Geography", hours: 28, color: "#F59E0B" }, 
-    { name: "Current Affairs", hours: 25, color: "#EF4444" },
-    { name: "Optional", hours: 15, color: "#8B5CF6" }
-  ];
+  
+  const subjectData = stats.subjectData;
   const totalSubjectHours = subjectData.reduce((sum, s) => sum + s.hours, 0);
   
   const CustomTooltip = ({ active, payload }: any) => {
@@ -48,11 +48,21 @@ export const PerformanceInsights = () => {
           </div>
           <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-4 border border-blue-500/30">
             <div className="text-sm text-blue-300 mb-1">📍 Next Best Action</div>
-            <div className="text-lg font-semibold text-white">Study Modern History for 2 hrs today</div>
+            <div className="text-lg font-semibold text-white">
+              {stats.subjectData.length > 0 
+                ? `Study ${stats.subjectData[0].name} for 2 hrs today`
+                : 'Start your first study session today'
+              }
+            </div>
           </div>
           <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 rounded-lg p-4 border border-green-500/30">
             <div className="text-sm text-green-300 mb-1">📈 Predicted Progress</div>
-            <div className="text-lg font-semibold text-white">At this pace: 320/500 by Prelims</div>
+            <div className="text-lg font-semibold text-white">
+              {stats.consistency > 70 
+                ? `At this pace: 320/500 by Prelims`
+                : 'Increase consistency to improve progress'
+              }
+            </div>
           </div>
         </div>
         <div className="bg-[#0e0e10] rounded-lg p-4">
@@ -80,7 +90,16 @@ export const PerformanceInsights = () => {
           </div>
           <div className="mt-4 pt-4 border-t border-gray-700">
             <div className="text-xs text-yellow-400 mb-2">⚠️ Attention Needed</div>
-            <div className="text-sm text-gray-300">Optional subject needs more focus.</div>
+            <div className="text-sm text-gray-300">
+              {stats.subjectData.length === 0 
+                ? 'Add subjects to start tracking your progress'
+                : stats.consistency < 50
+                ? 'Low consistency detected. Try to study daily.'
+                : stats.focusScore < 70
+                ? 'Focus score is low. Minimize distractions during study.'
+                : 'Keep up the good work!'
+              }
+            </div>
           </div>
         </div>
       </div>
