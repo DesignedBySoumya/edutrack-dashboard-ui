@@ -83,3 +83,36 @@
     border-radius: 10px;
   }
 }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite linear;
+  background-size: 200% 100%;
+}
+
+/* Fade transition for dashboard content */
+.dashboard-content-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.dashboard-content-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
+
+.dashboard-content-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dashboard-content-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 200ms ease-in-out, transform 200ms ease-in-out;
+}
