@@ -1,23 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
-import { useDashboard } from '@/hooks/useDashboard';
-import { PerformanceInsights } from '@/components/dashboard/PerformanceInsights';
-import { WeeklyProgress } from '@/components/dashboard/WeeklyProgress';
-import { FlashcardStats } from '@/components/dashboard/FlashcardStats';
-import { PomodoroStats } from '@/components/dashboard/PomodoroStats';
-import { ExamDropdown } from '@/components/ExamDropdown';
-import { supabase } from '@/lib/supabaseClient';
-import { Sword, TrendingUp, Timer, Zap } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { PerformanceInsights } from "@/components/dashboard/PerformanceInsights";
+import { WeeklyProgress } from "@/components/dashboard/WeeklyProgress";
+import { FlashcardStats } from "@/components/dashboard/FlashcardStats";
+import { PomodoroStats } from "@/components/dashboard/PomodoroStats";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell } from "recharts";
+import { Sword, Timer, TrendingUp, Zap, Play } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useDashboard } from "@/hooks/useDashboard";
+import { supabase } from "@/lib/supabaseClient";
 import { DashboardStats } from '@/lib/dashboardService';
-import { 
-  DashboardSkeleton, 
-  PerformanceInsightsSkeleton, 
-  WeeklyProgressSkeleton, 
-  FlashcardStatsSkeleton, 
-  PomodoroStatsSkeleton, 
-  MockStatsSkeleton 
-} from '@/components/dashboard/DashboardSkeleton';
 
 interface Exam {
   id: number;
@@ -70,36 +61,130 @@ const DashboardPage = () => {
               Error: {error}
             </div>
           )}
-          {refreshing && (
+          {refreshing && false && (
             <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg text-blue-300 text-sm">
               Updating data...
             </div>
           )}
         </div>
 
-        {/* Show skeletons while loading, real content when loaded */}
-        {loading || !stats ? (
-          <DashboardSkeleton />
-        ) : (
-          <div className="space-y-6 lg:space-y-8 dashboard-content-enter-active">
-            {/* Performance Insights */}
-            <PerformanceInsights stats={stats} />
-            
-            {/* Weekly Progress */}
-            <WeeklyProgress stats={stats} />
-            
-            {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <FlashcardStats stats={stats} />
-              <PomodoroStats stats={stats} />
+        <div className="relative min-h-[320px]">
+          <div className={`absolute inset-0 transition-opacity duration-500 ${loading ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}> 
+            <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6 w-full h-full flex flex-col justify-center">
+              <div className="animate-shimmer h-8 w-2/3 mb-6 rounded-lg bg-muted" />
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="animate-shimmer h-16 w-32 rounded-xl bg-muted" />
+                <div className="animate-shimmer h-16 w-32 rounded-xl bg-muted" />
+                <div className="animate-shimmer h-16 w-32 rounded-xl bg-muted" />
+              </div>
+              <div className="animate-shimmer h-32 w-full rounded-xl bg-muted" />
             </div>
-            
-            {/* Mock Stats */}
-            <div className="mt-6">
-              <MockStats stats={stats} />
+          </div>
+          <div className={`transition-opacity duration-500 ${loading ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}> 
+            {stats ? (
+              <PerformanceInsights stats={stats} />
+            ) : (
+              <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Performance Insights</h2>
+                <div className="text-center text-gray-400 py-8">
+                  No data available
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        {loading ? (
+          <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">
+            <div className="mb-4 sm:mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <button className="px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-gray-400">Week</button>
+                  <button className="px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-gray-400">Month</button>
+                  <button className="px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-gray-400">Year</button>
+                </div>
+              </div>
+            </div>
+            <div className="text-center text-gray-400 py-8">
+              Loading...
+            </div>
+          </div>
+        ) : stats ? (
+          <WeeklyProgress stats={stats} />
+        ) : (
+          <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">
+            <div className="mb-4 sm:mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <button className="px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-gray-400">Week</button>
+                  <button className="px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-gray-400">Month</button>
+                  <button className="px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 text-gray-400">Year</button>
+                </div>
+              </div>
+            </div>
+            <div className="text-center text-gray-400 py-8">
+              No data available
             </div>
           </div>
         )}
+        {/* --- Added Components Below --- */}
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {loading ? (
+            <>
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+                <div className="text-center text-gray-400 py-8">Loading...</div>
+              </div>
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+                <div className="text-center text-gray-400 py-8">Loading...</div>
+              </div>
+            </>
+          ) : stats ? (
+            <>
+              <FlashcardStats stats={stats} />
+              <PomodoroStats stats={stats} />
+            </>
+          ) : (
+            <>
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+                <div className="text-center text-gray-400 py-8">No data available</div>
+              </div>
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+                <div className="text-center text-gray-400 py-8">No data available</div>
+              </div>
+            </>
+          )}
+        </div>
+        {/* Full-width MockStats card below */}
+        <div className="mt-6">
+          {loading ? (
+            <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white flex flex-col gap-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Sword className="h-6 w-6 text-gray-300" />
+                  <h2 className="text-xl font-bold text-white">Mock Test Analytics</h2>
+                </div>
+              </div>
+              <div className="text-center text-gray-400 py-8">
+                Loading...
+              </div>
+            </div>
+          ) : stats ? (
+            <MockStats stats={stats} />
+          ) : (
+            <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white flex flex-col gap-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Sword className="h-6 w-6 text-gray-300" />
+                  <h2 className="text-xl font-bold text-white">Mock Test Analytics</h2>
+                </div>
+              </div>
+              <div className="text-center text-gray-400 py-8">
+                No data available
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Performance Summary */}
       </div>
     </div>
   );
