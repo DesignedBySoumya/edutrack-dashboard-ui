@@ -34,7 +34,7 @@ export function LoginForm({
   const location = useLocation();
   const { handleLoginSuccess } = useAuthRedirect({ redirectIfAuthenticated: true });
   const { toast } = useToast();
-  const { user, isAuthenticated, signIn } = useAuth();
+  const { user, isAuthenticated, signIn, signInWithGoogle } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -115,9 +115,18 @@ export function LoginForm({
     console.log("Apple login clicked");
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google login (UI only for now)
-    alert('Google login is not implemented.');
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        setErrors((prev) => ({ ...prev, general: error.message || "Google login failed." }));
+      }
+    } catch (error: any) {
+      setErrors((prev) => ({ ...prev, general: error.message || "Google login failed." }));
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
