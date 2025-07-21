@@ -65,11 +65,7 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
+              <Route path="/" element={<Index />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>

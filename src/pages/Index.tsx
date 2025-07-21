@@ -8,6 +8,9 @@ import { SummaryBox } from '@/components/SummaryBox';
 import { useToast } from '@/hooks/use-toast';
 import { Crown } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { LoginForm } from '@/components/LoginForm';
 
 interface Topic {
   id: number;
@@ -53,6 +56,8 @@ const Index = () => {
     totalTimeSpent: "0h 00m"
   });
 
+  const { user } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
 
   // Fetch subjects from Supabase
@@ -524,9 +529,27 @@ const Index = () => {
               <SubjectCard
                 key={subject.id}
                 subject={subject}
-                onPlayPause={handlePlayPause}
-                onAddTopic={handleAddTopic}
-                onToggleTopic={handleToggleTopic}
+                onPlayPause={(subjectId) => {
+                  if (!user) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  handlePlayPause(subjectId);
+                }}
+                onAddTopic={(subjectId, chapterId) => {
+                  if (!user) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  handleAddTopic(subjectId, chapterId);
+                }}
+                onToggleTopic={(subjectId, chapterId, topicId) => {
+                  if (!user) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  handleToggleTopic(subjectId, chapterId, topicId);
+                }}
                 onUpdateSubject={handleUpdateSubject}
               />
             ))
@@ -535,7 +558,13 @@ const Index = () => {
         {/* Add New Subject Button */}
         <div className="mx-6 mt-4">
           <button
-            onClick={handleAddNewSubject}
+            onClick={() => {
+              if (!user) {
+                setShowLoginModal(true);
+                return;
+              }
+              handleAddNewSubject();
+            }}
             className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
           >
             <span>Add New Subject</span>
@@ -546,6 +575,13 @@ const Index = () => {
       
       {/* Bottom Navigation */}
       <BottomNav />
+
+      {/* Login Modal for restricted actions */}
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent>
+          <LoginForm />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
