@@ -109,31 +109,39 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[#0A0E27] text-white">
       {/* Header with stats */}
-      <div className="bg-[#1C2541] border-b border-[#2563EB]/20">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+      <div className="bg-[#1C2541] border-b border-[#2563EB]/20 max-[370px]:sticky max-[370px]:top-0 max-[370px]:z-30 max-[370px]:backdrop-blur-sm max-[370px]:bg-[#1C2541]/95">
+        <div className="max-w-6xl mx-auto px-6 py-4 max-[370px]:px-4 max-[370px]:py-3">
+          <div className="flex items-center justify-between max-[370px]:flex-col max-[370px]:items-start max-[370px]:gap-2">
+            <div className="flex items-center gap-6 max-[370px]:gap-3">
               <Brain className="text-[#2563EB]" size={32} />
-              <h1 className="text-2xl font-bold">FlashMaster</h1>
+              <h1 className="text-2xl font-bold max-[370px]:text-xl">FlashMaster</h1>
             </div>
-            
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Star className="text-yellow-500" size={20} />
-                <span className="font-semibold">{points} XP</span>
+            <div className="flex items-center gap-6 max-[370px]:mt-2 max-[370px]:w-full max-[370px]:grid max-[370px]:grid-cols-3 max-[370px]:gap-2">
+              <div className="flex items-center gap-2 max-[370px]:justify-center max-[370px]:bg-[#0F1B3A] max-[370px]:border max-[370px]:border-[#2563EB]/20 max-[370px]:rounded-full max-[370px]:px-3 max-[370px]:text-xs max-[370px]:min-h-[44px] max-[370px]:leading-tight max-[370px]:text-center active:scale-95 transition-transform">
+                <Star className="text-yellow-500 max-[370px]:w-4 max-[370px]:h-4" size={20} />
+                <div className="flex items-center gap-1 max-[370px]:flex-col max-[370px]:gap-0">
+                  <span className="font-semibold">{points}</span>
+                  <span className="opacity-80">XP</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Flame className="text-orange-500" size={20} />
-                <span className="font-semibold">{streak} day streak</span>
+              <div className="flex items-center gap-2 max-[370px]:justify-center max-[370px]:bg-[#0F1B3A] max-[370px]:border max-[370px]:border-[#2563EB]/20 max-[370px]:rounded-full max-[370px]:px-3 max-[370px]:text-xs max-[370px]:min-h-[44px] max-[370px]:leading-tight max-[370px]:text-center active:scale-95 transition-transform">
+                <Flame className="text-orange-500 max-[370px]:w-4 max-[370px]:h-4" size={20} />
+                <div className="flex items-center gap-1 max-[370px]:flex-col max-[370px]:gap-0">
+                  <span className="font-semibold">{streak} day</span>
+                  <span className="opacity-80">streak</span>
+                </div>
               </div>
-              <div className="bg-[#2563EB] px-3 py-1 rounded-full text-sm font-semibold">
-                Level {level}
+              <div className="bg-[#2563EB] px-3 py-1 rounded-full text-sm font-semibold max-[370px]:px-3 max-[370px]:text-xs max-[370px]:text-center max-[370px]:min-h-[44px] max-[370px]:flex max-[370px]:items-center max-[370px]:justify-center active:scale-95 transition-transform">
+                <div className="flex items-center gap-1 max-[370px]:flex-col max-[370px]:gap-0">
+                  <span>Level</span>
+                  <span className="font-bold">{level}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
+       
       {/* Main content */}
       <AnimatePresence mode="wait">
         <motion.div

@@ -96,7 +96,7 @@ export const CalendarApp = () => {
         onViewChange={setView}
       />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden max-[365px]:flex-col">
         <Sidebar
           calendars={calendars}
           onToggleCalendar={toggleCalendarVisibility}
@@ -114,8 +114,7 @@ export const CalendarApp = () => {
           onRangeSelect={handleSidebarRangeSelect}
           onDeleteCalendar={deleteCalendar}
         />
-        
-        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900 scrollbar-corner-slate-900" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 #0f172a' }}>
+        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900 scrollbar-corner-slate-900 relative max-[365px]:min-h-[50vh]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 #0f172a' }}>
           <CalendarGrid
             currentDate={currentDate}
             view={view}

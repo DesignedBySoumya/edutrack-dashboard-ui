@@ -1,11 +1,9 @@
 
-import { Plus, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Plus, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/types/calendar';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { useState } from 'react';
-import { useRef } from 'react';
-import { FcGoogle } from 'react-icons/fc';
+import { useState, useRef } from 'react';
 
 interface SidebarProps {
   calendars: Calendar[];
@@ -28,12 +26,6 @@ export const Sidebar = ({ calendars, onToggleCalendar, onNewEvent, onAddCalendar
   const [newCalendarDesc, setNewCalendarDesc] = useState('');
   const [newCalendarColor, setNewCalendarColor] = useState(COLOR_OPTIONS[0]);
   const [calendarRange, setCalendarRange] = useState<{ from: Date; to?: Date } | undefined>(undefined);
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [googleCalendars, setGoogleCalendars] = useState([
-    // Placeholder for Google calendars
-    { id: 'gcal-1', name: 'Google Work', color: '#4285F4', visible: true },
-    { id: 'gcal-2', name: 'Google Personal', color: '#0F9D58', visible: true },
-  ]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [calendarToDelete, setCalendarToDelete] = useState<string | null>(null);
   const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -46,12 +38,6 @@ export const Sidebar = ({ calendars, onToggleCalendar, onNewEvent, onAddCalendar
       setNewCalendarColor(COLOR_OPTIONS[0]);
       setShowAddCalendarModal(false);
     }
-  };
-
-  const connectGoogleCalendar = () => {
-    // TODO: Implement OAuth flow here
-    setGoogleConnected(true);
-    // After connecting, fetch Google calendars and setGoogleCalendars([...])
   };
 
   // Handle range or single date selection
@@ -92,7 +78,7 @@ export const Sidebar = ({ calendars, onToggleCalendar, onNewEvent, onAddCalendar
   };
 
   return (
-    <div className="w-64 bg-slate-900 border-r border-slate-700 p-4">
+    <div className="w-64 bg-slate-900 border-r border-slate-700 p-4 max-[365px]:w-full max-[365px]:border-r-0 max-[365px]:border-b">
       <div className="mb-6">
         <Button 
           onClick={onNewEvent}
@@ -103,15 +89,6 @@ export const Sidebar = ({ calendars, onToggleCalendar, onNewEvent, onAddCalendar
           Create Event
         </Button>
         <div className="h-3" />
-        <Button 
-          variant="outline"
-          className="w-full border-slate-600 text-slate-700 bg-white hover:bg-slate-100 rounded-lg py-2 text-base font-semibold flex items-center justify-center gap-2 shadow-sm focus:ring-2 focus:ring-blue-400 mb-6"
-          size="lg"
-          onClick={connectGoogleCalendar}
-        >
-          <FcGoogle className="h-5 w-5" />
-          {googleConnected ? 'Google Connected' : 'Connect with Google'}
-        </Button>
         {/* Calendar Demo with range selection */}
         <div className="p-3 bg-slate-800 rounded-lg">
           <CalendarComponent
@@ -146,28 +123,6 @@ export const Sidebar = ({ calendars, onToggleCalendar, onNewEvent, onAddCalendar
         </div>
       </div>
       <div className="space-y-4">
-        {googleConnected && (
-          <div>
-            <h3 className="text-sm font-semibold text-green-400 uppercase tracking-wide mb-2">Google Calendars</h3>
-            <div className="space-y-2 mb-4">
-              {googleCalendars.map((calendar) => (
-                <div
-                  key={calendar.id}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: calendar.color }}
-                    />
-                    <span className="text-sm text-slate-200">{calendar.name}</span>
-                  </div>
-                  <span className="text-xs text-green-400">●</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
             My Calendars

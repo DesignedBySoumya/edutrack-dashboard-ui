@@ -273,7 +273,7 @@ const PomodoroPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-slate-900 max-[365px]:pb-2">
       {/* Header */}
       <Header selectedExamId={null} onExamChange={() => {}} />
       

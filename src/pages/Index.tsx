@@ -487,7 +487,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter">
+    <div className="min-h-screen bg-slate-900 text-white pb-20 font-inter max-[365px]:pb-24">
       {/* Header */}
       <Header selectedExamId={selectedExamId} onExamChange={setSelectedExamId} />
       
@@ -505,7 +505,7 @@ const Index = () => {
       />
       
       {/* Subject Cards */}
-      <div className="pb-4">
+      <div className="pb-4 max-[365px]:px-4">
         {loading ? (
           <p className="text-center text-white">Loading subjects...</p>
         ) : subjects.length === 0 ? (
@@ -556,7 +556,7 @@ const Index = () => {
         )}
 
         {/* Add New Subject Button */}
-        <div className="mx-6 mt-4">
+        <div className="mx-6 mt-4 max-[365px]:mx-0 max-[365px]:px-4">
           <button
             onClick={() => {
               if (!user) {
@@ -565,7 +565,7 @@ const Index = () => {
               }
               handleAddNewSubject();
             }}
-            className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg"
+            className="flex items-center justify-center space-x-3 w-full bg-[#4263FF] hover:bg-[#3651E6] text-white font-semibold text-base px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg max-[365px]:min-h-[48px]"
           >
             <span>Add New Subject</span>
             <Crown className="w-5 h-5" />

@@ -51,7 +51,7 @@ export const Header = ({ selectedExamId, onExamChange }: HeaderProps) => {
   };
 
   return (
-    <div className="bg-slate-900 px-6 py-5 border-b border-slate-700 min-h-[72px] flex items-center">
+    <div className="bg-slate-900 px-6 py-5 border-b border-slate-700 min-h-[72px] flex items-center max-[365px]:px-4 max-[365px]:py-3 max-[365px]:min-h-[56px]">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center space-x-2">
           <ExamDropdown

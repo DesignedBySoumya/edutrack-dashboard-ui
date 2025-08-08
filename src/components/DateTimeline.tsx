@@ -85,13 +85,13 @@ export const DateTimeline = ({ selectedDate, onDateSelect }: DateTimelineProps) 
   }, []);
 
   return (
-    <div className="bg-slate-900 px-6 py-4">
-      <div className="flex gap-2 w-full justify-between">
+    <div className="bg-slate-900 px-6 py-4 max-[365px]:-mx-4 max-[365px]:px-4">
+      <div className="flex gap-2 w-full justify-between max-[365px]:overflow-x-auto max-[365px]:scrollbar-hide">
         {visibleDates.map((item, index) => (
           <button
             key={`${item.day}-${item.date}-${index}`}
             onClick={() => onDateSelect(item.fullDate)}
-            className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs min-w-0 flex-1 ${
+            className={`flex flex-col items-center px-2 py-2 rounded-lg transition-all font-inter text-xs min-w-0 flex-1 max-[365px]:min-w-[56px] ${
               item.fullDate === new Date().toDateString() || selectedDate === item.fullDate
                 ? 'bg-blue-500 text-white brightness-110'
                 : 'hover:bg-slate-800 text-gray-400'

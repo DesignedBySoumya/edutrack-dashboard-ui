@@ -130,8 +130,8 @@ export const EventModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-lg w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 max-[365px]:p-0">
+      <div className="bg-slate-800 rounded-lg w-full max-w-md max-[365px]:max-w-none max-[365px]:h-[100vh] max-[365px]:rounded-none">
         <div className="flex items-center justify-between p-4 border-b border-slate-700">
           <h3 className="text-lg font-semibold text-white">
             {event ? 'Edit Event' : 'New Event'}
@@ -145,7 +145,7 @@ export const EventModal = ({
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 max-[365px]:h-[calc(100vh-120px)] max-[365px]:overflow-auto">
           <Input
             placeholder="Event title"
             value={title}

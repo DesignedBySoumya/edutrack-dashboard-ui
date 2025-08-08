@@ -49,13 +49,13 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-[#0e0e10] text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-6 lg:space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-6 lg:space-y-8 max-[365px]:px-4 max-[365px]:space-y-4">
         {/* Dynamic Header */}
-        <div className="text-center mb-6 lg:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+        <div className="text-center mb-6 lg:mb-8 max-[365px]:mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 max-[365px]:text-xl">
             {loadingExam ? 'Loading...' : selectedExam ? `${selectedExam.name} Dashboard` : 'Study Dashboard'}
           </h1>
-          <p className="text-gray-400 text-sm sm:text-base">Transform your preparation with data-driven insights</p>
+          <p className="text-gray-400 text-sm sm:text-base max-[365px]:text-sm">Transform your preparation with data-driven insights</p>
           {error && (
             <div className="mt-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300 text-sm">
               Error: {error}
@@ -70,21 +70,21 @@ const DashboardPage = () => {
 
         <div className="relative min-h-[320px]">
           <div className={`absolute inset-0 transition-opacity duration-500 ${loading ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}> 
-            <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6 w-full h-full flex flex-col justify-center">
+            <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6 w-full h-full flex flex-col justify-center max-[365px]:p-4">
               <div className="animate-shimmer h-8 w-2/3 mb-6 rounded-lg bg-muted" />
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="animate-shimmer h-16 w-32 rounded-xl bg-muted" />
                 <div className="animate-shimmer h-16 w-32 rounded-xl bg-muted" />
                 <div className="animate-shimmer h-16 w-32 rounded-xl bg-muted" />
               </div>
-              <div className="animate-shimmer h-32 w-full rounded-xl bg-muted" />
+              <div className="animate-shimmer h-32 w-full rounded-xl bg-muted max-[365px]:h-[220px]" />
             </div>
           </div>
           <div className={`transition-opacity duration-500 ${loading ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}> 
             {stats ? (
               <PerformanceInsights stats={stats} />
             ) : (
-              <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">
+              <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6 max-[365px]:p-4">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Performance Insights</h2>
                 <div className="text-center text-gray-400 py-8">
                   No data available
@@ -94,7 +94,7 @@ const DashboardPage = () => {
           </div>
         </div>
         {loading ? (
-          <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">
+          <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6 max-[365px]:p-4">
             <div className="mb-4 sm:mb-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2 sm:gap-4">
@@ -111,7 +111,7 @@ const DashboardPage = () => {
         ) : stats ? (
           <WeeklyProgress stats={stats} />
         ) : (
-          <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6">
+          <div className="bg-[#1a1a1d] rounded-xl p-4 sm:p-6 max-[365px]:p-4">
             <div className="mb-4 sm:mb-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2 sm:gap-4">
@@ -128,13 +128,13 @@ const DashboardPage = () => {
         )}
         {/* --- Added Components Below --- */}
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-[365px]:gap-4">
           {loading ? (
             <>
-              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white max-[365px]:p-4">
                 <div className="text-center text-gray-400 py-8">Loading...</div>
               </div>
-              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white max-[365px]:p-4">
                 <div className="text-center text-gray-400 py-8">Loading...</div>
               </div>
             </>
@@ -145,19 +145,19 @@ const DashboardPage = () => {
             </>
           ) : (
             <>
-              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white max-[365px]:p-4">
                 <div className="text-center text-gray-400 py-8">No data available</div>
               </div>
-              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white">
+              <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white max-[365px]:p-4">
                 <div className="text-center text-gray-400 py-8">No data available</div>
               </div>
             </>
           )}
         </div>
         {/* Full-width MockStats card below */}
-        <div className="mt-6">
+        <div className="mt-6 max-[365px]:mt-4">
           {loading ? (
-            <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white flex flex-col gap-6">
+            <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white flex flex-col gap-6 max-[365px]:p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Sword className="h-6 w-6 text-gray-300" />
@@ -171,7 +171,7 @@ const DashboardPage = () => {
           ) : stats ? (
             <MockStats stats={stats} />
           ) : (
-            <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white flex flex-col gap-6">
+            <div className="bg-[#181B23] rounded-2xl shadow p-6 font-inter text-white flex flex-col gap-6 max-[365px]:p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Sword className="h-6 w-6 text-gray-300" />
